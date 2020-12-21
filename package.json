@@ -1,0 +1,20 @@
+{
+  "name": "outfit-manager",
+  "version": "0.0.1",
+  "description": "Outfit Manager",
+  "main": "dist/js/bundle.js",
+  "scripts": {
+    "dev": "concurrently --kill-others \"npm:compile:watch\" \"npm:dev:server\"",
+    "dev:server": "parcel ./src/www/index.html --out-dir artifacts/obj",
+    "compile:watch": "tsc -p . --watch"
+  },
+  "author": "MasterDev",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^3.9.7"
+  },
+  "browserslist": [
+    "since 2020-01"
+  ],
+  "dependencies": {}
+}

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="style.css">
+        <title>Outfit Manager</title>
+    </head>
+    <body>
+      <label for="file-selector">file dialog</label>
+      <input id="file-selector" type="file" accept=".json" multiple>
+      <!-- <script>
+           const fileSelector = document.getElementById('file-selector')
+           var objs = [];
+
+           fileSelector.onchange = function(event) {
+           const fileList = event.target.files;
+           console.log(fileList);
+
+           for (i = 0; i < fileList.length; ++i) {
+           const reader = new FileReader();
+
+           reader.onload = function(e) {
+           objs.push(JSON.parse(e.target.result));
+           };
+           
+           reader.readAsText(fileList[i]);
+           }
+           };
+           </script> -->
+      <div id="tree1" class="tree">
+      </div>
+    </body>
+    <script src="../index.ts"></script>
+</html>
