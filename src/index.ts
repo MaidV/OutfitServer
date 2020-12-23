@@ -16,6 +16,20 @@ function parse(file: File) {
   });
 };
 
+function updateFoldables() {
+  let coll = document.getElementsByClassName("collapsible");
+  for (let i = 0; i < coll.length; i++) {
+    coll[i].addEventListener("click", function() {
+      this.classList.toggle("active");
+      var content = this.nextElementSibling;
+      if (content.style.display === "block") {
+        content.style.display = "none";
+      } else {
+        content.style.display = "block";
+      }
+    });
+  }
+}
 
 let fileSelector = document.getElementById("file-selector");
 
@@ -35,20 +49,44 @@ fileSelector?.addEventListener("change",
       inputObjs.set(key, formMap);
     };
 
+
+    articles.clear();
     for (let [mod, rawforms] of inputObjs.entries()) {
-      let local_articles = Array<Article>();
+      let localArticles = Array<Article>();
       for (let formid in rawforms) {
         try {
           let newArticle = new Article(rawforms[formid]);
-          local_articles.push(new Article(rawforms[formid]));
+          localArticles.push(newArticle);
         }
         catch (e) {
           console.log("Record not a valid armor piece: ", e,
             rawforms[formid]);
         }
       }
-      articles.set(mod, local_articles);
+      articles.set(mod, localArticles);
     }
 
-    console.log(articles);
+    let modContainer = document.getElementById("articles");
+    if (!modContainer)
+      return;
+
+    modContainer.innerHTML = "";
+    for (let [mod, local_articles] of articles.entries()) {
+      console.log(mod, local_articles);
+      let modBtn = document.createElement("BUTTON");
+      modBtn.textContent = mod;
+      modBtn.className = "collapsible";
+      modContainer.appendChild(modBtn);
+      let articleContainer = document.createElement("div");
+      articleContainer.className = "content";
+      for (let article of local_articles) {
+        let articleDiv = article.Draw();
+        articleContainer.appendChild(articleDiv);
+      }
+      articleContainer.style.display = "none";
+      modContainer.appendChild(articleContainer);
+    }
+
+    updateFoldables();
+
   });

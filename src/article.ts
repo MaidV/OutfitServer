@@ -27,4 +27,11 @@ export class Article {
       throw e;
     }
   }
+
+  public Draw(): HTMLElement {
+    let divEl = document.createElement("div");
+    divEl.textContent = `${this.name} [${this.FormID}, ${this.EDID}, ${this.slots}]`;
+    return divEl;
+  }
+
 }
