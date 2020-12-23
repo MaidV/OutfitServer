@@ -1,42 +1,52 @@
-let treeStrs = ["tree1"];
-for (let treeStr of treeStrs) {
-  let divEl = document.getElementById(treeStr);
-  if (divEl) {
-    let newStr = treeStr;
-    divEl.innerHTML = newStr;
-  }
-  else {
-    throw Error(`Error drawing ${treeStr}`)
-  }
-}
+import { Article } from './article'
 
 let fileSelector = document.getElementById("file-selector");
 
-let inputObjs = new Map();
+let articles = new Map<string, Array<Article>>();
 fileSelector?.addEventListener("change",
-  function loadJSONFiles(event: Event) {
+  async function loadJSONFiles(event: Event) {
     const target = event.target as HTMLInputElement;
     const files = target.files;
 
     if (!files)
       return;
 
-    console.log(files);
+    let inputObjs = new Map<string, any>();
+    for (let f of files) {
+      function parse(file: File) {
+        return new Promise((resolve, reject) => {
+          const reader: FileReader = new FileReader();
 
-    for (let file of files) {
-      const reader: FileReader = new FileReader();
-
-      reader.onload = function(e: Event) {
-        if (!this.result || this.result instanceof ArrayBuffer)
-          return;
-
-        let key = file.name.replace(/\.json/, "");
-        inputObjs.set(key, JSON.parse(this.result));
+          reader.onload = function(e: Event) {
+            if (!this.result || this.result instanceof ArrayBuffer)
+              return;
+            resolve(JSON.parse(this.result));
+          };
+          reader.onerror = function(e: any) {
+            reject(e);
+          };
+          reader.readAsText(file);
+        });
       };
 
-      reader.readAsText(file);
+      let key = f.name.replace(/\.json/, "");
+      let formMap = await parse(f);
+      inputObjs.set(key, formMap);
+    };
+
+    for (let [mod, rawforms] of inputObjs.entries()) {
+      let local_articles = Array<Article>();
+      for (let formid in rawforms) {
+        try {
+          let newArticle = new Article(rawforms[formid]);
+          local_articles.push(new Article(rawforms[formid]));
+        }
+        catch {
+          console.log("Record not a valid armor piece: ", rawforms[formid]);
+        }
+      }
+      articles.set(mod, local_articles);
     }
 
-    console.log(inputObjs);
-  }
-)
+    console.log(articles);
+  });
