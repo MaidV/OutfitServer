@@ -3,6 +3,28 @@ import { Article } from './article'
 let articles = new Map<string, Array<Article>>();
 let fileSelector = document.getElementById("file-selector");
 fileSelector?.addEventListener("change", loadJSONFiles);
+let outfitContainer = document.getElementById("outfitContainer");
+if (outfitContainer) {
+    outfitContainer.ondragover = function(event: DragEvent) {
+        event.preventDefault();
+    }
+
+    outfitContainer.ondrop = function(event: DragEvent) {
+        event.preventDefault();
+        const data = event.dataTransfer?.getData("text");
+        const mod_pair = data?.split(';');
+        let target = event.target as HTMLDivElement;
+
+        if (mod_pair?.length == 2) {
+            let modArticles = articles.get(mod_pair[0]);
+            let i = Number(mod_pair[1]);
+            if (!modArticles || i === undefined || i < 0 || i > modArticles.length)
+                return;
+            let articleDiv = modArticles[i].Draw();
+            target.appendChild(articleDiv);
+        }
+    }
+}
 
 function parse(file: File) {
     return new Promise((resolve, reject) => {
@@ -72,16 +94,22 @@ async function loadJSONFiles(event: Event) {
 
     modContainer.innerHTML = "";
     for (let [mod, local_articles] of articles.entries()) {
-        console.log(mod, local_articles);
         let modBtn = document.createElement("BUTTON");
         modBtn.textContent = mod;
         modBtn.className = "collapsible";
         modContainer.appendChild(modBtn);
         let articleContainer = document.createElement("div");
         articleContainer.className = "content";
-        for (let article of local_articles) {
+        for (let i = 0; i < local_articles.length; ++i) {
+            let article = local_articles[i];
             let articleDiv = article.Draw();
             articleDiv.draggable = true;
+            articleDiv.ondragstart =
+                function drag(event: DragEvent) {
+                    const target = event.target as HTMLInputElement;
+                    event.dataTransfer?.setData("text", `${mod};${i}`);
+                };
+
             articleContainer.appendChild(articleDiv);
         }
         articleContainer.style.display = "none";
@@ -89,6 +117,4 @@ async function loadJSONFiles(event: Event) {
     }
 
     updateFoldables();
-
 }
-

@@ -1,5 +1,6 @@
 * {
     box-sizing: border-box;
+    font: 12px Arial, Helvetica, sans-serif;
 }
 
 *::-webkit-scrollbar {
@@ -22,7 +23,7 @@ body {
 
 .app {
     position: absolute;
-    top: 12px;
+    top: 10px;
     bottom: 0;
     left: 0;
     width: 100%;
@@ -54,7 +55,7 @@ body {
   border: none;
   text-align: left;
   outline: none;
-  font: 14px Arial, sans-serif;
+  font-size: 14px;
 }
 
 /* Add a background color to the button if it is clicked on (add the .active class with JS), and when you move the mouse over it (hover) */
@@ -67,7 +68,6 @@ body {
   padding: 0 18px;
   display: none;
   overflow: hidden;
-  font: 12px Arial, Helvetica, sans-serif;
   cursor: grab;
   background-color: #f1f1f1;
   user-select: none;
