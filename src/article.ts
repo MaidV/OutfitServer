@@ -33,5 +33,4 @@ export class Article {
         divEl.innerHTML = `${this.name}<br>&nbsp&nbsp&nbsp&nbsp${this.slots.join(', ')}`;
         return divEl;
     }
-
 }

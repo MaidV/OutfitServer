@@ -1,5 +1,9 @@
 import { Article } from './article'
 
+let articles = new Map<string, Array<Article>>();
+let fileSelector = document.getElementById("file-selector");
+fileSelector?.addEventListener("change", loadJSONFiles);
+
 function parse(file: File) {
     return new Promise((resolve, reject) => {
         const reader: FileReader = new FileReader();
@@ -31,7 +35,6 @@ function updateFoldables() {
     }
 }
 
-let articles = new Map<string, Array<Article>>();
 async function loadJSONFiles(event: Event) {
     const target = event.target as HTMLInputElement;
     const files = target.files;
@@ -89,5 +92,3 @@ async function loadJSONFiles(event: Event) {
 
 }
 
-let fileSelector = document.getElementById("file-selector");
-fileSelector?.addEventListener("change", loadJSONFiles);
