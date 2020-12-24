@@ -81,6 +81,7 @@ fileSelector?.addEventListener("change",
       articleContainer.className = "content";
       for (let article of local_articles) {
         let articleDiv = article.Draw();
+        articleDiv.draggable = true;
         articleContainer.appendChild(articleDiv);
       }
       articleContainer.style.display = "none";

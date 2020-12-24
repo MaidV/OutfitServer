@@ -30,7 +30,7 @@ export class Article {
 
   public Draw(): HTMLElement {
     let divEl = document.createElement("div");
-    divEl.textContent = `${this.name} [${this.FormID}, ${this.EDID}, ${this.slots}]`;
+    divEl.innerHTML = `${this.name}<br>&nbsp&nbsp&nbsp&nbsp${this.slots.join(', ')}`;
     return divEl;
   }
 
