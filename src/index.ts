@@ -11,13 +11,13 @@ if (outfitContainer) {
 
     outfitContainer.ondrop = function(event: DragEvent) {
         event.preventDefault();
-        const data = event.dataTransfer?.getData("text");
-        const mod_pair = data?.split(';');
+        const modStr = event.dataTransfer?.getData("mod");
+        const indexStr = event.dataTransfer?.getData("index");
         let target = event.target as HTMLDivElement;
 
-        if (mod_pair?.length == 2) {
-            let modArticles = articles.get(mod_pair[0]);
-            let i = Number(mod_pair[1]);
+        if (indexStr && modStr) {
+            let modArticles = articles.get(modStr);
+            let i = Number(indexStr);
             if (!modArticles || i === undefined || i < 0 || i > modArticles.length)
                 return;
             let articleDiv = modArticles[i].Draw();
@@ -107,7 +107,8 @@ async function loadJSONFiles(event: Event) {
             articleDiv.ondragstart =
                 function drag(event: DragEvent) {
                     const target = event.target as HTMLInputElement;
-                    event.dataTransfer?.setData("text", `${mod};${i}`);
+                    event.dataTransfer?.setData("mod", mod);
+                    event.dataTransfer?.setData("index", String(i));
                 };
 
             articleContainer.appendChild(articleDiv);
