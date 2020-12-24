@@ -6,9 +6,12 @@
         <title>Outfit Manager</title>
     </head>
     <body>
-      <label for="file-selector">file dialog</label>
+      <label for="file-selector"></label>
       <input id="file-selector" type="file" accept=".json" multiple>
-      <div id="articles" class="articleContainer">
+      <div class="app">
+        <div id="articleContainer" class="app articles">
+        </div>
+        <div id="outfitContainer" class="app outfit"></div>
       </div>
     </body>
     <script src="../index.ts"></script>

@@ -66,7 +66,7 @@ fileSelector?.addEventListener("change",
       articles.set(mod, localArticles);
     }
 
-    let modContainer = document.getElementById("articles");
+    let modContainer = document.getElementById("articleContainer");
     if (!modContainer)
       return;
 
