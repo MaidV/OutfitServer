@@ -1,7 +1,8 @@
-import { Article } from './article'
+import { Article, ArticleStore } from './article'
+import { Outfit } from './outfit'
 
-let articles = new Map<string, Array<Article>>();
-let fileSelector = document.getElementById("file-selector");
+let articles = new ArticleStore();
+let fileSelector = document.getElementById("fileSelector");
 fileSelector?.addEventListener("change", loadJSONFiles);
 let outfitContainer = document.getElementById("outfitContainer");
 if (outfitContainer) {
@@ -16,11 +17,8 @@ if (outfitContainer) {
         let target = event.target as HTMLDivElement;
 
         if (indexStr && modStr) {
-            let modArticles = articles.get(modStr);
-            let i = Number(indexStr);
-            if (!modArticles || i === undefined || i < 0 || i > modArticles.length)
-                return;
-            let articleDiv = modArticles[i].Draw();
+            let article = articles.get(modStr, indexStr);
+            let articleDiv = article.Draw();
             target.appendChild(articleDiv);
         }
     }
@@ -77,15 +75,14 @@ async function loadJSONFiles(event: Event) {
 
         for (let formid in rawforms) {
             try {
-                let newArticle = new Article(rawforms[formid]);
-                localArticles.push(newArticle);
+                let newArticle = new Article(mod, rawforms[formid]);
+                articles.insert(newArticle);
             }
             catch (e) {
                 console.log("Record not a valid armor piece: ", e,
                     rawforms[formid]);
             }
         }
-        articles.set(mod, localArticles);
     }
 
     let modContainer = document.getElementById("articleContainer");
