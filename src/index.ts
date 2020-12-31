@@ -33,12 +33,14 @@ function parse(file: File) {
                 return;
             resolve(JSON.parse(this.result));
         };
+
         reader.onerror = function(e: any) {
             reject(e);
         };
+
         reader.readAsText(file);
-    });
-};
+    })
+}
 
 function updateFoldables() {
     let coll = document.getElementsByClassName("collapsible");
@@ -67,7 +69,7 @@ async function loadJSONFiles(event: Event) {
         let key = f.name.replace(/\.json/, "");
         let formMap = await parse(f);
         inputObjs.set(key, formMap);
-    };
+    }
 
     articles.clear();
     for (let [mod, rawforms] of inputObjs.entries()) {
@@ -115,4 +117,37 @@ async function loadJSONFiles(event: Event) {
     }
 
     updateFoldables();
+}
+
+try {
+    const menu = document.querySelector(".menu") as HTMLElement;
+    let menuVisible = false;
+    function toggleMenu(command: string) {
+        menu.style.display = command === "show" ? "block" : "none";
+        menuVisible = !menuVisible;
+    };
+
+    function setPosition(origin: { top: number, left: number }) {
+        menu.style.left = `${origin.left}px`;
+        menu.style.top = `${origin.top}px`;
+        toggleMenu("show");
+    };
+
+    window.addEventListener("click", function(e) {
+        if (menuVisible) toggleMenu("hide");
+    });
+
+    window.addEventListener("contextmenu", function(e) {
+        e.preventDefault();
+        const origin = {
+            left: e.pageX,
+            top: e.pageY
+        };
+        setPosition(origin);
+        return false;
+    });
+}
+catch (e) {
+    console.log("Unable to find menu element");
+    console.log(e);
 }
