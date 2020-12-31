@@ -5,6 +5,7 @@ export class Article {
     public readonly EDID: string = "";
     public readonly slots: Array<string> = [];
     public readonly mod: string = "";
+    private div: HTMLDivElement;
 
     constructor(mod: string,
         form: {
@@ -29,20 +30,22 @@ export class Article {
         catch (e) {
             throw e;
         }
+        this.div = document.createElement("div");
     }
 
     public Draw(): HTMLElement {
-        let divEl = document.createElement("div");
-        divEl.innerHTML = `${this.name}<br>&nbsp&nbsp&nbsp&nbsp${this.slots.join(', ')}`;
-        return divEl;
+        this.div.innerHTML = `${this.name}<br>&nbsp&nbsp&nbsp&nbsp${this.slots.join(', ')}`;
+        return this.div;
     }
 }
 
 export class ArticleStore {
     private articles: Map<string, Array<Article>>;
+    private div: HTMLDivElement;
 
-    constructor() {
+    constructor(container: HTMLDivElement) {
         this.articles = new Map<string, Array<Article>>();
+        this.div = container;
     }
 
     public insert(article: Article) {
