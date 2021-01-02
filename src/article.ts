@@ -1,3 +1,4 @@
+import { parse, updateFoldables } from './util'
 
 export class Article {
     public readonly name: string = "";
@@ -76,4 +77,69 @@ export class ArticleStore {
     public entries() {
         return this.articles.entries();
     }
+
+    public getDiv() {
+        return this.div;
+    }
+
+    public parseJSONFiles(inputObjs: Map<string, any>) {
+        this.articles.clear();
+        for (let [mod, rawforms] of inputObjs.entries()) {
+            let localArticles = Array<Article>();
+
+            for (let formid in rawforms) {
+                try {
+                    let newArticle = new Article(mod, rawforms[formid]);
+                    this.insert(newArticle);
+                }
+                catch (e) {
+                    console.log("Record not a valid armor piece: ", e,
+                        rawforms[formid]);
+                }
+            }
+        }
+
+        this.div.innerHTML = "";
+        for (let [mod, local_articles] of this.articles.entries()) {
+            let modBtn = document.createElement("BUTTON");
+            modBtn.textContent = mod;
+            modBtn.className = "collapsible";
+            this.div.appendChild(modBtn);
+            let articleContainer = document.createElement("div");
+            articleContainer.className = "content";
+            for (let i = 0; i < local_articles.length; ++i) {
+                let article = local_articles[i];
+                let articleDiv = article.Draw();
+                articleDiv.draggable = true;
+                articleDiv.ondragstart =
+                    function drag(event: DragEvent) {
+                        const target = event.target as HTMLInputElement;
+                        event.dataTransfer?.setData("mod", mod);
+                        event.dataTransfer?.setData("index", String(i));
+                    };
+
+                articleContainer.appendChild(articleDiv);
+            }
+            articleContainer.style.display = "none";
+            this.div.appendChild(articleContainer);
+        }
+    }
+}
+
+export async function loadJSONFiles(event: Event, articleStore: ArticleStore) {
+    const target = event.target as HTMLInputElement;
+    const files = target.files;
+
+    if (!files)
+        return;
+
+    let inputObjs = new Map<string, any>();
+    for (let f of files) {
+        let key = f.name.replace(/\.json/, "");
+        let formMap = await parse(f);
+        inputObjs.set(key, formMap);
+    }
+
+    articleStore.parseJSONFiles(inputObjs);
+    updateFoldables();
 }
