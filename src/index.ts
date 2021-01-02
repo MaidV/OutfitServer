@@ -1,4 +1,4 @@
-import { Article, ArticleStore, loadJSONFiles } from './article'
+import { ArticleStore, loadJSONFiles } from './article'
 import { OutfitStore } from './outfit'
 
 function main(): void {
@@ -12,11 +12,9 @@ function main(): void {
         return;
     }
 
-    let articles = new ArticleStore(articleContainer);
-    let outfits = new OutfitStore(outfitContainer);
-    fileSelector.addEventListener("change", function(e) {
-        loadJSONFiles(e, articles);
-    });
+    globalThis.articleStore = new ArticleStore(articleContainer);
+    globalThis.outfitStore = new OutfitStore(outfitContainer);
+    fileSelector.addEventListener("change", loadJSONFiles);
 
     // outfitContainer.ondragover = function(event: DragEvent) {
     //     event.preventDefault();
@@ -64,7 +62,7 @@ function main(): void {
 
     let outfitAdder = document.getElementById("outfitAdder");
     outfitAdder?.addEventListener("click", function(e) {
-        outfits.insert();
+        globalThis.outfitStore.insert();
     });
 }
 

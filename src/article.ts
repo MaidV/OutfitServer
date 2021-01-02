@@ -126,7 +126,7 @@ export class ArticleStore {
     }
 }
 
-export async function loadJSONFiles(event: Event, articleStore: ArticleStore) {
+export async function loadJSONFiles(event: Event) {
     const target = event.target as HTMLInputElement;
     const files = target.files;
 
@@ -140,6 +140,6 @@ export async function loadJSONFiles(event: Event, articleStore: ArticleStore) {
         inputObjs.set(key, formMap);
     }
 
-    articleStore.parseJSONFiles(inputObjs);
+    globalThis.articleStore.parseJSONFiles(inputObjs);
     updateFoldables();
 }
