@@ -38,6 +38,13 @@ body {
     width: 33.3%;
     left: 33.3%;
     background-color: grey;
+    overflow-y: scroll;
+}
+
+.app.transforms {
+    width:33.4%;
+    left: 66.6%;
+    overflow-y: scroll;
 }
 
 .outfit {
