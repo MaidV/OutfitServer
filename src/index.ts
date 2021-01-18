@@ -16,23 +16,6 @@ function main(): void {
     globalThis.outfitStore = new OutfitStore(outfitContainer);
     fileSelector.addEventListener("change", loadJSONFiles);
 
-    // outfitContainer.ondragover = function(event: DragEvent) {
-    //     event.preventDefault();
-    // }
-
-    // outfitContainer.ondrop = function(event: DragEvent) {
-    //     event.preventDefault();
-    //     const modStr = event.dataTransfer?.getData("mod");
-    //     const indexStr = event.dataTransfer?.getData("index");
-    //     let target = event.target as HTMLDivElement;
-
-    //     if (indexStr && modStr) {
-    //         let article = articles.get(modStr, indexStr);
-    //         let articleDiv = article.Draw();
-    //         target.appendChild(articleDiv);
-    //     }
-    // }
-
     // Menu logic
     let menuVisible = false;
     function toggleMenu(command: string) {

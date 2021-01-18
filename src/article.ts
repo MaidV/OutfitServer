@@ -1,20 +1,22 @@
 import { parse, updateFoldables } from './util'
 
+interface Form {
+    "FULL - Name": string,
+    "Record Header": { "FormID": string, "Record Flags": { "Non-Playable": string } },
+    "EDID - Editor ID": string,
+    "BOD2 - Biped Body Template": { "First Person Flags": any },
+}
+
 export class Article {
     public readonly name: string = "";
     public readonly FormID: string = "";
     public readonly EDID: string = "";
     public readonly slots: Array<string> = [];
     public readonly mod: string = "";
+    public readonly form: Form;
     private div: HTMLDivElement;
 
-    constructor(mod: string,
-        form: {
-            "FULL - Name": string,
-            "Record Header": { "FormID": string, "Record Flags": { "Non-Playable": string } },
-            "EDID - Editor ID": string,
-            "BOD2 - Biped Body Template": { "First Person Flags": any },
-        }) {
+    constructor(mod: string, form: Form) {
         this.mod = mod;
         try {
             if (form["Record Header"]["Record Flags"]["Non-Playable"])
@@ -22,6 +24,7 @@ export class Article {
             this.name = form["FULL - Name"];
             if (!this.name)
                 throw 'Undefined name';
+            this.form = form;
             this.FormID = "0x" + form["Record Header"]["FormID"].substr(2);
             this.EDID = form["EDID - Editor ID"];
             this.slots = Object.keys(form["BOD2 - Biped Body Template"]["First Person Flags"]);
@@ -34,7 +37,7 @@ export class Article {
         this.div = document.createElement("div");
     }
 
-    public Draw(): HTMLElement {
+    public draw(): HTMLElement {
         this.div.innerHTML = `${this.name}<br>&nbsp&nbsp&nbsp&nbsp${this.slots.join(', ')}`;
         return this.div;
     }
@@ -109,7 +112,7 @@ export class ArticleStore {
             articleContainer.className = "content";
             for (let i = 0; i < local_articles.length; ++i) {
                 let article = local_articles[i];
-                let articleDiv = article.Draw();
+                let articleDiv = article.draw();
                 articleDiv.draggable = true;
                 articleDiv.ondragstart =
                     function drag(event: DragEvent) {

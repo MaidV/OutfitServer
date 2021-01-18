@@ -4,33 +4,46 @@ export class Outfit {
     public name: string = "";
     public articles: Array<Article> = [];
     private div: HTMLDivElement;
+    private articleDiv: HTMLDivElement;
 
     constructor(name: string) {
         this.name = name;
         this.div = document.createElement("div");
         this.div.setAttribute("id", "outfit:" + this.name);
+        this.div.setAttribute("class", "outfit");
         this.div.innerHTML = this.name;
+
+        this.articleDiv = document.createElement("div");
+        this.articleDiv.setAttribute("class", "outfit-content");
+
+        this.div.appendChild(this.articleDiv);
 
         this.div.ondragover = function(event: DragEvent) {
             event.preventDefault();
         };
 
-        this.div.ondrop = function(event: DragEvent) {
+        this.div.ondrop = (event: DragEvent) => {
             event.preventDefault();
             const modStr = event.dataTransfer?.getData("mod");
             const indexStr = event.dataTransfer?.getData("index");
-            let target = event.target as HTMLDivElement;
 
             if (indexStr && modStr) {
-                let article = globalThis.articleStore.get(modStr, indexStr);
-                let articleDiv = article.Draw();
-                target.appendChild(articleDiv);
+                this.insert(indexStr, modStr);
             }
         };
     }
 
-    public insert(article: Article): void {
+    public insert(indexStr: int, modStr: int): void {
+        let elID = `${this.name};${modStr};${indexStr}`
+        if (document.getElementById(elID))
+            return;
+
+        let articleBase = globalThis.articleStore.get(modStr, indexStr);
+        let article = new Article(articleBase.mod, articleBase.form);
         this.articles.push(article);
+        let articleDiv = article.draw();
+        articleDiv.setAttribute("id", elID);
+        this.articleDiv.appendChild(articleDiv);
     }
 
     public getDiv(): HTMLDivElement {
