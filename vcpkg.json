@@ -1,8 +1,8 @@
 {
-  "name": "exampleproject",
-  "version-string": "1.0.0",
-  "description": "An example project built using CommonLibSSE",
-  "homepage": "https://github.com/Ryan-rsm-McKenzie/ExamplePlugin-CommonLibSSE",
+  "name": "outfitserver",
+  "version-string": "0.0.1",
+  "description": "Web based interface for Skyrim SE equipment",
+  "homepage": "",
   "license": "MIT",
   "dependencies": [
     "boost-atomic",

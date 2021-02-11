@@ -8,7 +8,7 @@
 		return false;
 	}
 
-	*path /= "MyFirstPlugin.log"sv;
+	*path /= "OutfitServer.log"sv;
 	auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
 #endif
 
@@ -24,10 +24,10 @@
 	spdlog::set_default_logger(std::move(log));
 	spdlog::set_pattern("%g(%#): [%^%l%$] %v"s);
 
-	logger::info("MyFirstPlugin v1.0.0");
+	logger::info("OutfitServer v0.0.1");
 
 	a_info->infoVersion = SKSE::PluginInfo::kVersion;
-	a_info->name = "MyFirstPlugin";
+	a_info->name = "OutfitServer";
 	a_info->version = 1;
 
 	if (a_skse->IsEditor()) {
@@ -36,7 +36,7 @@
 	}
 
 	const auto ver = a_skse->RuntimeVersion();
-	if (ver < SKSE::RUNTIME_1_5_39) {
+	if (ver < SKSE::RUNTIME_1_5_97) {
 		logger::critical(FMT_STRING("Unsupported runtime version {}"), ver.string());
 		return false;
 	}
@@ -47,7 +47,7 @@
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
-	logger::info("MyFirstPlugin loaded");
+	logger::info("OutfitServer loaded");
 
 	SKSE::Init(a_skse);
 

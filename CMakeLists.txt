@@ -7,8 +7,8 @@ set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "")
 # ---- Project ----
 
 project(
-	ExampleProject
-	VERSION 1.0.0
+	OutfitServer
+	VERSION 0.0.1
 	LANGUAGES CXX
 )
 
@@ -119,13 +119,15 @@ find_package(spdlog REQUIRED)
 # ---- Add source files ----
 
 set(headers
-	src/PCH.h
+	src/mongoose.h
 )
 
 set(sources
 	src/main.cpp
-	src/PCH.cpp
+	src/mongoose.cpp
+	src/outfit_server.cpp
 )
+set_source_files_properties(src/mongoose.cpp PROPERTIES COMPILE_FLAGS "/wd4996 /wd4244 /wd4267 /wd4312")
 
 source_group(
 	TREE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -163,6 +165,7 @@ target_link_libraries(${PROJECT_NAME}
 	PUBLIC
 		CommonLibSSE::CommonLibSSE
 		spdlog::spdlog
+		Ws2_32.lib
 )
 
 target_link_options(${PROJECT_NAME}
