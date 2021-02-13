@@ -88,7 +88,7 @@ if (MSVC)
 		/external:W0
 		
 		/W4	# Warning level (all warnings)
-		/WX	# Warning level (warnings are errors)
+		#/WX	# Warning level (warnings are errors)
 		
 		"$<$<CONFIG:Debug>:${COMPILE_OPTIONS_DEBUG}>"
 		"$<$<CONFIG:Release>:${COMPILE_OPTIONS_RELEASE}>"
