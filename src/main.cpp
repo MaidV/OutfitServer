@@ -1,4 +1,5 @@
-﻿#include <thread>
+﻿#include "outfit_server.h"
+#include <thread>
 
 void outfit_server();
 

@@ -1,21 +1,21 @@
-#include "mongoose.h"
-
-#include <unordered_map>
 #include <mutex>
+#include <unordered_map>
 
 #include "json.hpp"
-using namespace RE;
+
+#include "mongoose.h"
+
 using json = nlohmann::json;
 using std::string;
-using std::vector;
 using std::unordered_map;
-
+using std::vector;
+using namespace RE;
 
 namespace keywordUtil
 {
 	std::mutex s_keywordCacheLock;
 
-	BGSKeyword* GetKeyword(const string &keywordname)
+	BGSKeyword* GetKeyword(const string& keywordname)
 	{
 		static std::unordered_map<string, BGSKeyword*> s_keywordCache;
 
@@ -25,8 +25,8 @@ namespace keywordUtil
 			TESDataHandler* dataHandler = TESDataHandler::GetSingleton();
 			BSTArray<TESForm*> keywords = dataHandler->GetFormArray(BGSKeyword::FORMTYPE);
 
-			for (auto &keywordform : keywords) {
-				auto* const keyword = keywordform->As<BGSKeyword>();
+			for (auto& keywordform : keywords) {
+				BGSKeyword* keyword = keywordform->As<BGSKeyword>();
 				s_keywordCache[string(keyword->formEditorID)] = keyword;
 				logger::debug("Added Keyword: " + string(keyword->formEditorID));
 			}
@@ -44,7 +44,7 @@ namespace keywordUtil
 		if (form == nullptr)
 			return false;
 
-		for (auto& keyword : keywords) {
+		for (BGSKeyword* keyword : keywords) {
 			if (form->HasKeyword(keyword)) {
 				return true;
 			}
@@ -55,7 +55,8 @@ namespace keywordUtil
 }
 
 template <typename T>
-T shorten_form(TESForm *form) {
+T shorten_form(TESForm* form)
+{
 	uint32_t shortened = form->formID & 0x00FFFFFF;
 	if constexpr (std::is_same_v<T, string>) {
 		char formID[7];
@@ -70,7 +71,6 @@ namespace ArticleNS
 {
 	struct Article
 	{
-
 		string name;
 		int32_t formID;
 		vector<uint8_t> slots;
@@ -78,18 +78,15 @@ namespace ArticleNS
 
 		Article(){};
 
-		Article(TESObjectARMO* armor){
-			name = armor->GetFullName();
-			formID = shorten_form<int32_t>(armor);
-			form = armor;
-		};
+		Article(TESObjectARMO* armor) :
+			name(armor->GetFullName()), formID(shorten_form<int32_t>(armor)), form(armor){};
 	};
 
 	void to_json(json& j, const Article& a)
 	{
 		j = json{
 			{ "name", a.name },
-			{ "formID", shorten_form<string>(a.form)},
+			{ "formID", shorten_form<string>(a.form) },
 			{ "slots", a.slots }
 		};
 	}
@@ -127,7 +124,7 @@ namespace SluttifyArmor
 		if (ignoreSkin) {
 			BSTArray<TESForm*> races = dataHandler->GetFormArray(TESRace::FORMTYPE);
 
-			for (auto &raceform : races) {
+			for (auto& raceform : races) {
 				const auto& race = static_cast<TESRace*>(raceform);
 				if (race->skin) {
 					exclude.insert(race->skin);
@@ -135,7 +132,7 @@ namespace SluttifyArmor
 			}
 
 			BSTArray<TESForm*> npcs = dataHandler->GetFormArray(TESNPC::FORMTYPE);
-			for (auto &npcform : npcs) {
+			for (auto& npcform : npcs) {
 				const auto& npc = static_cast<TESNPC*>(npcform);
 				if (npc->skin) {
 					exclude.insert(npc->skin);
@@ -147,8 +144,8 @@ namespace SluttifyArmor
 			keywordUtil::GetKeyword("zad_InventoryDevice"),
 			keywordUtil::GetKeyword("zad_Lockable")
 		};
-		
-		BSTArray<TESForm*> &armors = dataHandler->GetFormArray(TESObjectARMO::FORMTYPE);
+
+		BSTArray<TESForm*>& armors = dataHandler->GetFormArray(TESObjectARMO::FORMTYPE);
 		for (TESForm* armorform : armors) {
 			TESObjectARMO* armor = static_cast<TESObjectARMO*>(armorform);
 			logger::debug("Checking armor " + string(armor->GetFullName()));
