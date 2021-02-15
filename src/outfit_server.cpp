@@ -28,7 +28,6 @@ namespace keywordUtil
 			for (auto& keywordform : keywords) {
 				BGSKeyword* keyword = keywordform->As<BGSKeyword>();
 				s_keywordCache[string(keyword->formEditorID)] = keyword;
-				logger::debug("Added Keyword: " + string(keyword->formEditorID));
 			}
 		}
 
@@ -54,16 +53,22 @@ namespace keywordUtil
 	}
 }
 
-template <typename T>
-T shorten_form(TESForm* form)
+template <typename T, uint32_t L>
+T mask_form(TESForm* form)
 {
-	uint32_t shortened = form->formID & 0x00FFFFFF;
+	uint32_t mask = 1;
+	for (int i = 1; i <= L; ++i)
+		mask *= 16;
+	mask -= 1;
+
+	const uint32_t masked = form->formID & mask;
 	if constexpr (std::is_same_v<T, string>) {
-		char formID[7];
-		sprintf_s(formID, 7, "%06X", shortened);
+		const string formatstr = "%0" + std::to_string(L) + "X";
+		char formID[L + 1];
+		sprintf_s(formID, L + 1, formatstr.c_str(), masked);
 		return string(formID);
 	} else {
-		return shortened;
+		return masked;
 	}
 }
 
@@ -79,14 +84,14 @@ namespace ArticleNS
 		Article(){};
 
 		Article(TESObjectARMO* armor) :
-			name(armor->GetFullName()), formID(shorten_form<int32_t>(armor)), form(armor){};
+			name(armor->GetFullName()), formID(mask_form<int32_t, 6>(armor)), form(armor){};
 	};
 
 	void to_json(json& j, const Article& a)
 	{
 		j = json{
 			{ "name", a.name },
-			{ "formID", shorten_form<string>(a.form) },
+			{ "formID", mask_form<string, 6>(a.form) },
 			{ "slots", a.slots }
 		};
 	}
@@ -109,7 +114,24 @@ unordered_map<string, unordered_map<string, ArticleNS::Article>> armorRecords;
 
 namespace SluttifyArmor
 {
-	void TryOutfit(StaticFunctionTag* base, Actor* actor)
+	void AddItem(Actor* actor, std::vector<TESForm*>& forms, int32_t count = 1, bool silent = false)
+	{
+		const auto scriptFactory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::Script>();
+		const auto script = scriptFactory ? scriptFactory->Create() : nullptr;
+		if (script) {
+			for (auto& form : forms) {
+				script->SetCommand("additem " +
+								   mask_form<string, 8>(form) + " " +
+								   std::to_string(count) + " " +
+								   std::to_string(silent));
+				logger::info(script->GetCommand());
+				script->CompileAndRun(actor);
+			}
+			delete script;
+		}
+	}
+
+	void TryOutfit(StaticFunctionTag*, Actor* actor)
 	{
 		TESDataHandler* dataHandler = TESDataHandler::GetSingleton();
 		armorRecords.clear();
@@ -181,8 +203,9 @@ namespace SluttifyArmor
 
 			ArticleNS::Article article(armor);
 			logger::debug("Created new Article: " + json(article).dump());
-			armorRecords[armor->GetFile()->fileName][shorten_form<string>(article.form)] = article;
+			armorRecords[armor->GetFile()->fileName][mask_form<string, 6>(article.form)] = article;
 		}
+		logger::info("dummy");
 
 		logger::info("Loaded all armors into Armor Map");
 		std::ofstream out;
@@ -190,11 +213,15 @@ namespace SluttifyArmor
 		logger::info("Opened dump file");
 		out << json(armorRecords).dump(4);
 		logger::info("Finished dump");
-
-		auto& armor = armorRecords["Skyrim.esm"]["01B3A3"].form;
+		std::vector<TESForm*> toEquip{
+			armorRecords["Skyrim.esm"]["01B3A3"].form,
+			armorRecords["Skyrim.esm"]["012E46"].form
+		};
+		AddItem(actor, toEquip, 1);
 
 		ActorEquipManager* equipManager = ActorEquipManager::GetSingleton();
-		equipManager->EquipObject(actor, armor, nullptr, 1);
+		for (auto& armor : toEquip)
+			equipManager->EquipObject(actor, static_cast<TESObjectARMO*>(armor), nullptr, 1);
 	}
 
 	//bool RegisterFuncs(VMClassRegistry* a_registry)
