@@ -110,7 +110,9 @@ namespace OutfitNS
 	{
 	};
 }
-unordered_map<string, unordered_map<string, ArticleNS::Article>> armorRecords;
+
+typedef unordered_map<string, unordered_map<string, ArticleNS::Article>> armor_record_t;
+armor_record_t armorRecords;
 
 namespace SluttifyArmor
 {
@@ -131,8 +133,11 @@ namespace SluttifyArmor
 		}
 	}
 
-	void TryOutfit(StaticFunctionTag*, Actor* actor)
+	void LoadArmors()
 	{
+		if (!armorRecords.empty())
+			return;
+
 		TESDataHandler* dataHandler = TESDataHandler::GetSingleton();
 		armorRecords.clear();
 		logger::info("Loading armor from mods");
@@ -213,6 +218,10 @@ namespace SluttifyArmor
 		logger::info("Opened dump file");
 		out << json(armorRecords).dump(4);
 		logger::info("Finished dump");
+	}
+
+	void TryOutfit(Actor* actor)
+	{
 		std::vector<TESForm*> toEquip{
 			armorRecords["Skyrim.esm"]["01B3A3"].form,
 			armorRecords["Skyrim.esm"]["012E46"].form
@@ -223,6 +232,12 @@ namespace SluttifyArmor
 		for (auto& armor : toEquip)
 			equipManager->EquipObject(actor, static_cast<TESObjectARMO*>(armor), nullptr, 1);
 	}
+
+	armor_record_t& GetLoadedArmors()
+	{
+		LoadArmors();
+		return armorRecords;
+	};
 
 	//bool RegisterFuncs(VMClassRegistry* a_registry)
 	//{
@@ -242,8 +257,12 @@ static void cb(struct mg_connection* c, int ev, void* ev_data, void*)
 
 		if (mg_vcmp(&hm->uri, "/UpdateOutfit") == 0) {
 			logger::info("UpdateOutfit Request received");
-			SluttifyArmor::TryOutfit(nullptr, PlayerCharacter::GetSingleton());
-			mg_http_reply(c, 200, "", "");
+			auto& armors = SluttifyArmor::GetLoadedArmors();
+			SluttifyArmor::TryOutfit(PlayerCharacter::GetSingleton());
+			mg_http_reply(c,
+				200,
+				"Content-Type: application/json; charset=utf-8\r\n",
+				json(armors).dump().c_str());
 
 			return;
 		}
