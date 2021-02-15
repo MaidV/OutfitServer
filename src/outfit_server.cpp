@@ -77,6 +77,7 @@ namespace ArticleNS
 	struct Article
 	{
 		string name;
+		string editorID;
 		int32_t formID;
 		vector<uint8_t> slots;
 		TESObjectARMO* form;
@@ -84,54 +85,16 @@ namespace ArticleNS
 		Article(){};
 
 		Article(TESObjectARMO* armor) :
-			name(armor->GetFullName()), formID(mask_form<int32_t, 6>(armor)), form(armor){};
+			name(armor->GetFullName()), 
+			editorID(armor->GetFormEditorID()), 
+			formID(mask_form<int32_t, 6>(armor)),
+			form(armor){};
 	};
+	void from_json(const json& j, Article& a);
+	void to_json(json& j, const Article& a);
 
-	void to_json(json& j, const Article& a)
-	{
-		j = json{
-			{ "name", a.name },
-			{ "formID", mask_form<string, 6>(a.form) },
-			{ "slots", a.slots }
-		};
-	}
-
-	void from_json(const json& j, Article& a)
-	{
-		j.at("name").get_to(a.name);
-		a.formID = strtol(string(j.at("formID")).c_str(), NULL, 16);
-		j.at("slots").get_to(a.slots);
-	}
-}
-
-namespace OutfitNS
-{
-	struct Outfit
-	{
-	};
-}
-
-typedef unordered_map<string, unordered_map<string, ArticleNS::Article>> armor_record_t;
-armor_record_t armorRecords;
-
-namespace SluttifyArmor
-{
-	void AddItem(Actor* actor, std::vector<TESForm*>& forms, int32_t count = 1, bool silent = false)
-	{
-		const auto scriptFactory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::Script>();
-		const auto script = scriptFactory ? scriptFactory->Create() : nullptr;
-		if (script) {
-			for (auto& form : forms) {
-				script->SetCommand("additem " +
-								   mask_form<string, 8>(form) + " " +
-								   std::to_string(count) + " " +
-								   std::to_string(silent));
-				logger::info(script->GetCommand());
-				script->CompileAndRun(actor);
-			}
-			delete script;
-		}
-	}
+	typedef unordered_map<string, unordered_map<string, ArticleNS::Article>> armor_record_t;
+	armor_record_t armorRecords;
 
 	void LoadArmors()
 	{
@@ -220,11 +183,64 @@ namespace SluttifyArmor
 		logger::info("Finished dump");
 	}
 
+	armor_record_t& GetLoadedArmors()
+	{
+		LoadArmors();
+		return ArticleNS::armorRecords;
+	};
+
+	void from_json(const json& j, Article& a)
+	{
+		LoadArmors();
+		string mod = j.at("mod");
+		string formID = j.at("formID");
+		a = Article(armorRecords[mod][formID]);
+	}
+
+	void to_json(json& j, const Article& a)
+	{
+		j = json{
+			{ "name", a.name },
+			{ "formID", mask_form<string, 6>(a.form) },
+			{ "editorID", a.editorID },
+			{ "slots", a.slots }
+		};
+	}
+}
+
+namespace OutfitNS
+{
+	struct Outfit
+	{
+	};
+}
+
+
+namespace SluttifyArmor
+{
+	void AddItem(Actor* actor, std::vector<TESForm*>& forms, int32_t count = 1, bool silent = false)
+	{
+		const auto scriptFactory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::Script>();
+		const auto script = scriptFactory ? scriptFactory->Create() : nullptr;
+		if (script) {
+			for (auto& form : forms) {
+				script->SetCommand("additem " +
+								   mask_form<string, 8>(form) + " " +
+								   std::to_string(count) + " " +
+								   std::to_string(silent));
+				logger::info(script->GetCommand());
+				script->CompileAndRun(actor);
+			}
+			delete script;
+		}
+	}
+
 	void TryOutfit(Actor* actor)
 	{
+		auto& armors = ArticleNS::GetLoadedArmors();
 		std::vector<TESForm*> toEquip{
-			armorRecords["Skyrim.esm"]["01B3A3"].form,
-			armorRecords["Skyrim.esm"]["012E46"].form
+			armors["Skyrim.esm"]["01B3A3"].form,
+			armors["Skyrim.esm"]["012E46"].form
 		};
 		AddItem(actor, toEquip, 1);
 
@@ -232,12 +248,6 @@ namespace SluttifyArmor
 		for (auto& armor : toEquip)
 			equipManager->EquipObject(actor, static_cast<TESObjectARMO*>(armor), nullptr, 1);
 	}
-
-	armor_record_t& GetLoadedArmors()
-	{
-		LoadArmors();
-		return armorRecords;
-	};
 
 	//bool RegisterFuncs(VMClassRegistry* a_registry)
 	//{
@@ -257,11 +267,11 @@ static void cb(struct mg_connection* c, int ev, void* ev_data, void*)
 
 		if (mg_vcmp(&hm->uri, "/UpdateOutfit") == 0) {
 			logger::info("UpdateOutfit Request received");
-			auto& armors = SluttifyArmor::GetLoadedArmors();
+			auto& armors = ArticleNS::GetLoadedArmors();
 			SluttifyArmor::TryOutfit(PlayerCharacter::GetSingleton());
 			mg_http_reply(c,
 				200,
-				"Content-Type: application/json; charset=utf-8\r\n",
+				"Content-Type: application/json; charset=utf-8\r\nAccess-Control-Allow-Origin: http://localhost:1234\r\n",
 				json(armors).dump().c_str());
 
 			return;
