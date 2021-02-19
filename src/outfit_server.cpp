@@ -79,7 +79,7 @@ namespace ArticleNS
 		string name;
 		string editorID;
 		int32_t formID;
-		vector<uint8_t> slots;
+		uint32_t slots;
 		TESObjectARMO* form;
 
 		Article(){};
@@ -88,6 +88,7 @@ namespace ArticleNS
 			name(armor->GetFullName()),
 			editorID(armor->GetFormEditorID()),
 			formID(mask_form<int32_t, 6>(armor)),
+			slots(static_cast<int32_t>(armor->GetSlotMask())),
 			form(armor){};
 	};
 	void from_json(const json& j, Article& a);
@@ -214,11 +215,16 @@ namespace ArticleNS
 
 	void to_json(json& j, const Article& a)
 	{
+		std::vector<uint8_t> slots;
+		for (int32_t i = 0; i < 32; ++i) {
+			if (a.slots >> i & 1)
+				slots.push_back((uint8_t)(i + 30));
+		}
 		j = json{
 			{ "name", a.name },
 			{ "formID", mask_form<string, 6>(a.form) },
 			{ "editorID", a.editorID },
-			{ "slots", a.slots }
+			{ "slots", slots }
 		};
 	}
 }
@@ -249,8 +255,6 @@ namespace OutfitNS
 
 	void from_json(const json& j, Outfit& o)
 	{
-		logger::info(j.dump());
-		logger::info(j.at("name"));
 		j.at("name").get_to(o.name);
 		j.at("articles").get_to(o.articles);
 		outfit_map[o.name] = o;
