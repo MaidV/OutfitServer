@@ -6,7 +6,7 @@
 /.ccls
 
 *.map
-/src/*.js
+/src_www/*.js
 
 .cache
 
