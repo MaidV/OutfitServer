@@ -13,28 +13,28 @@ using namespace RE;
 
 namespace keywordUtil
 {
-	std::mutex s_keywordCacheLock;
+	std::mutex keyword_cache_lock;
 
 	BGSKeyword* GetKeyword(const string& keywordname)
 	{
-		static std::unordered_map<string, BGSKeyword*> s_keywordCache;
+		static std::unordered_map<string, BGSKeyword*> keyword_cache;
 
-		s_keywordCacheLock.lock();
+		keyword_cache_lock.lock();
 
-		if (s_keywordCache.empty()) {
-			TESDataHandler* dataHandler = TESDataHandler::GetSingleton();
-			BSTArray<TESForm*> keywords = dataHandler->GetFormArray(BGSKeyword::FORMTYPE);
+		if (keyword_cache.empty()) {
+			TESDataHandler* data_handler = TESDataHandler::GetSingleton();
+			BSTArray<TESForm*> keywords = data_handler->GetFormArray(BGSKeyword::FORMTYPE);
 
 			for (auto& keywordform : keywords) {
 				BGSKeyword* keyword = keywordform->As<BGSKeyword>();
-				s_keywordCache[string(keyword->formEditorID)] = keyword;
+				keyword_cache[string(keyword->formEditorID)] = keyword;
 			}
 		}
 
-		s_keywordCacheLock.unlock();
+		keyword_cache_lock.unlock();
 
-		auto it = s_keywordCache.find(keywordname);
-		BGSKeyword* keyword = (it != s_keywordCache.end()) ? it->second : NULL;
+		auto it = keyword_cache.find(keywordname);
+		BGSKeyword* keyword = (it != keyword_cache.end()) ? it->second : NULL;
 		return keyword;
 	}
 
@@ -102,18 +102,18 @@ namespace ArticleNS
 		if (!armor_map.empty())
 			return;
 
-		TESDataHandler* dataHandler = TESDataHandler::GetSingleton();
+		TESDataHandler* data_handler = TESDataHandler::GetSingleton();
 		armor_map.clear();
 		logger::info("Loading armor from mods");
-		bool ignoreSkin = true;
+		bool ignore_skin = true;
 		bool playable = true;
-		bool ignoreTemplates = true;
-		bool ignoreEnchantments = true;
-		bool onlyEnchanted = false;
+		bool ignore_templates = true;
+		bool ignore_enchantments = true;
+		bool only_enchanted = false;
 
 		std::set<TESObjectARMO*> exclude;
-		if (ignoreSkin) {
-			BSTArray<TESForm*> races = dataHandler->GetFormArray(TESRace::FORMTYPE);
+		if (ignore_skin) {
+			BSTArray<TESForm*> races = data_handler->GetFormArray(TESRace::FORMTYPE);
 
 			for (auto& raceform : races) {
 				const auto& race = static_cast<TESRace*>(raceform);
@@ -122,7 +122,7 @@ namespace ArticleNS
 				}
 			}
 
-			BSTArray<TESForm*> npcs = dataHandler->GetFormArray(TESNPC::FORMTYPE);
+			BSTArray<TESForm*> npcs = data_handler->GetFormArray(TESNPC::FORMTYPE);
 			for (auto& npcform : npcs) {
 				const auto& npc = static_cast<TESNPC*>(npcform);
 				if (npc->skin) {
@@ -136,11 +136,11 @@ namespace ArticleNS
 			keywordUtil::GetKeyword("zad_Lockable")
 		};
 
-		BSTArray<TESForm*>& armors = dataHandler->GetFormArray(TESObjectARMO::FORMTYPE);
+		BSTArray<TESForm*>& armors = data_handler->GetFormArray(TESObjectARMO::FORMTYPE);
 		for (TESForm* armorform : armors) {
 			TESObjectARMO* armor = static_cast<TESObjectARMO*>(armorform);
 			logger::debug("Checking armor " + string(armor->GetFullName()));
-			if (ignoreSkin && exclude.contains(armor)) {
+			if (ignore_skin && exclude.contains(armor)) {
 				logger::debug("Excluding armor due to skin");
 				continue;
 			}
@@ -148,15 +148,15 @@ namespace ArticleNS
 				logger::debug("Excluding armor due to not playable");
 				continue;
 			}
-			if (ignoreTemplates && armor->templateArmor) {
+			if (ignore_templates && armor->templateArmor) {
 				logger::debug("Excluding armor due to template");
 				continue;
 			}
-			if (ignoreEnchantments && armor->formEnchanting) {
+			if (ignore_enchantments && armor->formEnchanting) {
 				logger::debug("Excluding armor due to enchantment");
 				continue;
 			}
-			if (onlyEnchanted && !armor->formEnchanting) {
+			if (only_enchanted && !armor->formEnchanting) {
 				logger::debug("Excluding armor due to requiring enchantments");
 				continue;
 			}
@@ -190,8 +190,8 @@ namespace ArticleNS
 
 	void AddItem(Actor* actor, std::vector<TESForm*>& forms, int32_t count = 1, bool silent = false)
 	{
-		const auto scriptFactory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::Script>();
-		const auto script = scriptFactory ? scriptFactory->Create() : nullptr;
+		const auto script_factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::Script>();
+		const auto script = script_factory ? script_factory->Create() : nullptr;
 		if (script) {
 			for (auto& form : forms) {
 				script->SetCommand("additem " +
@@ -238,19 +238,31 @@ namespace OutfitNS
 	};
 	std::unordered_map<string, Outfit> outfit_map;
 
+	void from_json(const json& j, Outfit& o);
+	void to_json(json& j, const Outfit& o);
+
 	void TryOutfit(Actor* actor, OutfitNS::Outfit& outfit)
 	{
-		ActorEquipManager* equipManager = ActorEquipManager::GetSingleton();
+		ActorEquipManager* equip_manager = ActorEquipManager::GetSingleton();
 
-		std::vector<TESForm*> toEquip;
-		toEquip.reserve(outfit.articles.size());
+		std::vector<TESForm*> to_equip;
+		to_equip.reserve(outfit.articles.size());
 		for (ArticleNS::Article& article : outfit.articles) {
-			toEquip.push_back(article.form);
+			to_equip.push_back(article.form);
 		}
-		ArticleNS::AddItem(actor, toEquip, 1);
+		ArticleNS::AddItem(actor, to_equip, 1);
 
-		for (auto& armor : toEquip)
-			equipManager->EquipObject(actor, static_cast<TESObjectARMO*>(armor), nullptr, 1);
+		for (auto& armor : to_equip)
+			equip_manager->EquipObject(actor, static_cast<TESObjectARMO*>(armor), nullptr, 1);
+	}
+
+	void TryOutfit(Actor* actor, const char *outfit_str) {
+			try {
+				Outfit outfit = json::parse(outfit_str);
+				TryOutfit(actor, outfit);
+			} catch (...) {
+				logger::info("Failed to init Outfit from json.");
+			}
 	}
 
 	void from_json(const json& j, Outfit& o)
@@ -299,12 +311,7 @@ static void cb(struct mg_connection* c, int ev, void* ev_data, void*)
 			outfit_str[len] = '\0';
 			logger::info(outfit_str.c_str());
 
-			try {
-				OutfitNS::Outfit outfit = json::parse(outfit_str.c_str());
-				OutfitNS::TryOutfit(PlayerCharacter::GetSingleton(), outfit);
-			} catch (...) {
-				logger::info("Failed to init Outfit from json.");
-			}
+			OutfitNS::TryOutfit(PlayerCharacter::GetSingleton(), outfit_str.c_str());
 
 			mg_http_reply(c, 200, "Access-Control-Allow-Origin: *\r\n", "");
 			return;
