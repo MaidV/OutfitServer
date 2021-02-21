@@ -1,35 +1,28 @@
 import { parse, updateFoldables } from './util'
 
 interface Form {
-    "FULL - Name": string,
-    "Record Header": { "FormID": string, "Record Flags": { "Non-Playable": string } },
-    "EDID - Editor ID": string,
-    "BOD2 - Biped Body Template": { "First Person Flags": any },
+    "name": string,
+    "formID": string,
+    "editorID": string,
+    "slots": Array<BigInteger>,
 }
 
 export class Article {
     public readonly name: string = "";
-    public readonly FormID: string = "";
-    public readonly EDID: string = "";
-    public readonly slots: Array<string> = [];
+    public readonly formID: string = "";
+    public readonly editorID: string = "";
+    public readonly slots: Array<BigInteger> = [];
     public readonly mod: string = "";
-    public readonly form: Form;
     private div: HTMLDivElement;
 
     constructor(mod: string, form: Form) {
         this.mod = mod;
         try {
-            if (form["Record Header"]["Record Flags"]["Non-Playable"])
-                throw 'Non-playable form';
-            this.name = form["FULL - Name"];
-            if (!this.name)
-                throw 'Undefined name';
-            this.form = form;
-            this.FormID = "0x" + form["Record Header"]["FormID"].substr(2);
-            this.EDID = form["EDID - Editor ID"];
-            this.slots = Object.keys(form["BOD2 - Biped Body Template"]["First Person Flags"]);
-            if (Object.keys(this.slots).length == 0)
-                throw 'No slots defined';
+            this.name = form["name"];
+            this.formID = form["formID"];
+            this.editorID = form["editorID"];
+            this.slots = form["slots"];
+            this.mod = mod;
         }
         catch (e) {
             throw e;
@@ -40,6 +33,10 @@ export class Article {
     public draw(): HTMLElement {
         this.div.innerHTML = `${this.name}<br>&nbsp&nbsp&nbsp&nbsp${this.slots.join(', ')}`;
         return this.div;
+    }
+
+    public toJSON() {
+        return {mod: this.mod, formID: this.formID};
     }
 }
 
@@ -85,9 +82,11 @@ export class ArticleStore {
         return this.div;
     }
 
-    public parseJSONFiles(inputObjs: Map<string, any>) {
+    public parseJSONData(inputObjs: any) {
         this.articles.clear();
-        for (let [mod, rawforms] of inputObjs.entries()) {
+
+        for (let mod in inputObjs) {
+            let rawforms = inputObjs[mod];
             let localArticles = Array<Article>();
 
             for (let formid in rawforms) {
@@ -101,6 +100,7 @@ export class ArticleStore {
                 }
             }
         }
+        console.log(this.articles);
 
         this.div.innerHTML = "";
         for (let [mod, local_articles] of this.articles.entries()) {
@@ -129,20 +129,22 @@ export class ArticleStore {
     }
 }
 
-export async function loadJSONFiles(event: Event) {
-    const target = event.target as HTMLInputElement;
-    const files = target.files;
+export function loadArmorData(event: Event) {
+    var url = "http://localhost:8000/LoadArmorData";
+    var request = new XMLHttpRequest();
 
-    if (!files)
-        return;
+    request.open('POST', url, true);
+    request.onload = function () { // request successful
+      // we can use server response to our request now
+      let armors = JSON.parse(request.response);
+      globalThis.articleStore.parseJSONData(armors);
+      updateFoldables();
+    };
 
-    let inputObjs = new Map<string, any>();
-    for (let f of files) {
-        let key = f.name.replace(/\.json/, "");
-        let formMap = await parse(f);
-        inputObjs.set(key, formMap);
-    }
+    request.onerror = function () {
+      // request failed
+    };
 
-    globalThis.articleStore.parseJSONFiles(inputObjs);
-    updateFoldables();
+    request.send(new FormData()); // create FormData from form that triggered event
+    return false;
 }

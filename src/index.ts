@@ -1,20 +1,20 @@
-import { ArticleStore, loadJSONFiles } from './article'
+import { ArticleStore, loadArmorData } from './article'
 import { OutfitStore } from './outfit'
 
 function main(): void {
     let outfitContainer = document.getElementById("outfitContainer") as HTMLDivElement;
     let articleContainer = document.getElementById("articleContainer") as HTMLDivElement;
-    let fileSelector = document.getElementById("fileSelector") as HTMLInputElement;
+    let armorLoader = document.getElementById("armorLoader") as HTMLLIElement;
     const menu = document.querySelector(".menu") as HTMLElement;
 
-    if (!outfitContainer || !articleContainer || !fileSelector || !menu) {
+    if (!outfitContainer || !articleContainer || !armorLoader || !menu) {
         console.log("Unable to init app");
         return;
     }
 
     globalThis.articleStore = new ArticleStore(articleContainer);
     globalThis.outfitStore = new OutfitStore(outfitContainer);
-    fileSelector.addEventListener("change", loadJSONFiles);
+    armorLoader.addEventListener("click", loadArmorData);
 
     // Menu logic
     let menuVisible = false;

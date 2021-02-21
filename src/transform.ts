@@ -1,4 +1,4 @@
-import { Article, ArticleStore } from './article'
+/* import { Article, ArticleStore } from './article'
 import { Outfit, OutfitStore } from './outfit'
 
 export class Transform {
@@ -10,7 +10,7 @@ export class Transform {
     constructor() {
     }
 
-    public insert(indexStr: int, modStr: int): void {
+    public insert(indexStr: string, modStr: string): void {
     }
 
     public getDiv(): HTMLDivElement {
@@ -26,3 +26,4 @@ export class TransformStore {
         this.div = div;
     }
 }
+ */

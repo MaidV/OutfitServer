@@ -22,6 +22,24 @@ export class Outfit {
             event.preventDefault();
         };
 
+        this.div.ondblclick = (event: Event) => {
+            var url = "http://localhost:8000/TryOutfit";
+            var request = new XMLHttpRequest();
+        
+            request.open('POST', url, true);
+            //request.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
+
+            let jsonStr = JSON.stringify({
+                "name": this.name,
+                "articles": this.articles
+            });
+            request.send(jsonStr);
+            console.log(jsonStr);
+            console.log(JSON.parse(jsonStr));
+
+            return false;
+        }
+
         this.div.ondrop = (event: DragEvent) => {
             event.preventDefault();
             const modStr = event.dataTransfer?.getData("mod");
@@ -33,13 +51,13 @@ export class Outfit {
         };
     }
 
-    public insert(indexStr: int, modStr: int): void {
+    public insert(indexStr: string, modStr: string): void {
         let elID = `${this.name};${modStr};${indexStr}`
         if (document.getElementById(elID))
             return;
 
         let articleBase = globalThis.articleStore.get(modStr, indexStr);
-        let article = new Article(articleBase.mod, articleBase.form);
+        let article = new Article(articleBase.mod, articleBase);
         this.articles.push(article);
         let articleDiv = article.draw();
         articleDiv.setAttribute("id", elID);
