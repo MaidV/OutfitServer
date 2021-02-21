@@ -5,7 +5,7 @@
   "main": "dist/js/bundle.js",
   "scripts": {
     "dev": "concurrently --kill-others \"npm:compile:watch\" \"npm:dev:server\"",
-    "dev:server": "parcel ./src/www/index.html --out-dir artifacts/obj",
+    "dev:server": "parcel ./src_www/www/index.html --out-dir artifacts/obj",
     "compile:watch": "tsc -p . --watch"
   },
   "author": "MasterDev",

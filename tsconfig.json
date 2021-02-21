@@ -7,7 +7,7 @@
     "target": "es6"
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.html"
+    "src_www/**/*.ts",
+    "src_www/**/*.html"
   ],
 }
