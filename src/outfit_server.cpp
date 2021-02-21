@@ -53,6 +53,20 @@ namespace keywordUtil
 	}
 }
 
+void run_scripts(Actor* actor, vector<string> commands)
+{
+	const auto script_factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::Script>();
+	const auto script = script_factory ? script_factory->Create() : nullptr;
+	if (!script)
+		return;
+	for (auto& command : commands) {
+		script->SetCommand(command);
+		logger::info(script->GetCommand());
+		script->CompileAndRun(actor);
+	}
+	delete script;
+}
+
 template <typename T, uint32_t L>
 T mask_form(TESForm* form)
 {
@@ -190,19 +204,13 @@ namespace ArticleNS
 
 	void AddItem(Actor* actor, std::vector<TESForm*>& forms, int32_t count = 1, bool silent = false)
 	{
-		const auto script_factory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::Script>();
-		const auto script = script_factory ? script_factory->Create() : nullptr;
-		if (script) {
-			for (auto& form : forms) {
-				script->SetCommand("additem " +
-								   mask_form<string, 8>(form) + " " +
-								   std::to_string(count) + " " +
-								   std::to_string(silent));
-				logger::info(script->GetCommand());
-				script->CompileAndRun(actor);
-			}
-			delete script;
-		}
+		vector<string> commands;
+		for (auto& form : forms)
+			commands.push_back("additem " +
+							   mask_form<string, 8>(form) + " " +
+							   std::to_string(count) + " " +
+							   std::to_string(silent));
+		run_scripts(actor, commands);
 	}
 
 	void from_json(const json& j, Article& a)
@@ -241,9 +249,12 @@ namespace OutfitNS
 	void from_json(const json& j, Outfit& o);
 	void to_json(json& j, const Outfit& o);
 
-	void TryOutfit(Actor* actor, OutfitNS::Outfit& outfit)
+	void TryOutfit(Actor* actor, OutfitNS::Outfit& outfit, bool unequip = true)
 	{
 		ActorEquipManager* equip_manager = ActorEquipManager::GetSingleton();
+
+		if (unequip)
+			run_scripts(actor, {"unequipall"});
 
 		std::vector<TESForm*> to_equip;
 		to_equip.reserve(outfit.articles.size());
@@ -256,13 +267,14 @@ namespace OutfitNS
 			equip_manager->EquipObject(actor, static_cast<TESObjectARMO*>(armor), nullptr, 1);
 	}
 
-	void TryOutfit(Actor* actor, const char *outfit_str) {
-			try {
-				Outfit outfit = json::parse(outfit_str);
-				TryOutfit(actor, outfit);
-			} catch (...) {
-				logger::info("Failed to init Outfit from json.");
-			}
+	void TryOutfit(Actor* actor, const char* outfit_str, bool unequip = true)
+	{
+		try {
+			Outfit outfit = json::parse(outfit_str);
+			TryOutfit(actor, outfit, unequip);
+		} catch (...) {
+			logger::info("Failed to init Outfit from json.");
+		}
 	}
 
 	void from_json(const json& j, Outfit& o)
