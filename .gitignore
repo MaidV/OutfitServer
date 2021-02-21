@@ -4,3 +4,12 @@
 /.ccls-cache
 /.vscode
 /.ccls
+
+*.map
+/src/*.js
+
+.cache
+
+/node_modules
+/artifacts
+/package-lock.json
