@@ -1,5 +1,6 @@
 * {
-    box-sizing: border-box;
+    /* box-sizing: border-box; */
+    user-select: none;
     font: 12px Arial, Helvetica, sans-serif;
 }
 
@@ -29,21 +30,41 @@ body {
     width: 100%;
 }
 
+.app.window {
+    position: absolute;
+    width:20%;
+    height: 80%;
+}
+
+#outfit-window {
+    left: 30%;
+}
+
+#transform-window {
+    left: 60%;
+}
+
 .app.articles {
-    width:33.3%;
+    position: absolute;
+    top:24px;
+    width: 100%;
+    background-color: aliceblue;
     overflow-y: scroll;
 }
 
 .app.outfits {
-    width: 33.3%;
-    left: 33.3%;
-    background-color: grey;
+    position: absolute;
+    width: 100%;
+    top: 24px;
+    background-color: aliceblue;
     overflow-y: scroll;
 }
 
 .app.transforms {
-    width:33.4%;
-    left: 66.6%;
+    position: absolute;
+    width: 100%;
+    top: 24px;
+    background-color: aliceblue;
     overflow-y: scroll;
 }
 
@@ -56,6 +77,47 @@ body {
     font-size: 10px;
     padding: 0 18px;
 }
+
+
+.window-header {
+    padding: 5px;
+    cursor: move;
+    background-color: #2196f3;
+    color: #fff;
+    user-select: none;
+}
+
+.resizer-right {
+    width: 5px;
+    height: 100%;
+    background: transparent;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    cursor: e-resize;
+  }
+  
+.resizer-bottom {
+    width: 100%;
+    height: 5px;
+    background: transparent;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    cursor: n-resize;
+  }
+  
+.resizer-both {
+    width: 5px;
+    height: 5px;
+    background: transparent;
+    z-index: 10;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    cursor: nw-resize;
+  }
+  
 
 /* Style the button that is used to open and close the collapsible content */
 .collapsible {
