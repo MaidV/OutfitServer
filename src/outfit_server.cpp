@@ -11,6 +11,92 @@ using std::unordered_map;
 using std::vector;
 using namespace RE;
 
+namespace Events
+{
+	class BreakEventManager : public RE::BSTEventSink<TESHitEvent>,
+	BSTEventSink<TESEquipEvent>
+	{
+	public:
+		[[nodiscard]] static BreakEventManager* GetSingleton()
+		{
+			static BreakEventManager singleton;
+			return std::addressof(singleton);
+		}
+
+		static void Register()
+		{
+			auto scripts = ScriptEventSourceHolder::GetSingleton();
+			if (scripts) {
+				scripts->AddEventSink<TESHitEvent>(GetSingleton());
+				logger::info("Registered {}"sv, typeid(RE::TESHitEvent).name());
+				scripts->AddEventSink<TESEquipEvent>(GetSingleton());
+				logger::info("Registered {}"sv, typeid(RE::TESEquipEvent).name());
+			}
+		}
+
+	protected:
+		using EventResult = RE::BSEventNotifyControl;
+
+		EventResult ProcessEvent(const TESHitEvent* a_event, RE::BSTEventSource<TESHitEvent>*) override
+		{
+			if (a_event && a_event->target)
+				return Evaluate(a_event->target);
+
+			return EventResult::kContinue;
+		}
+
+		EventResult ProcessEvent(const TESEquipEvent* a_event, BSTEventSource<TESEquipEvent>*) override {
+			if (a_event && a_event->equipped && a_event->actor) {
+				return Evaluate(a_event->actor);
+			}
+			return EventResult::kContinue;
+		}
+
+	private:
+		BreakEventManager() = default;
+		BreakEventManager(const BreakEventManager&) = delete;
+		BreakEventManager(BreakEventManager&&) = delete;
+
+		EventResult Evaluate(TESObjectREFRPtr targetPtr)
+		{
+			auto target = targetPtr->AsReference();
+			const auto inv = target->GetInventory([](TESBoundObject& a_object) {
+				return a_object.IsArmor();
+			});
+
+			for (const auto& [item, invData] : inv) {
+				const auto& [count, entry] = invData;
+				if (count > 0 && entry->IsWorn()) {
+					for (const auto &xList : *entry->extraLists) {
+						if (xList) {
+							auto xHealth = xList->GetByType<ExtraHealth>();
+							if (xHealth && xHealth->health <= 0.1f) {
+								logger::info("Removing item {}"sv, item->GetName());
+								ActorEquipManager::GetSingleton()->UnequipObject(target->As<Actor>(), item, xList);
+								//target->RemoveItem(item, 1, ITEM_REMOVE_REASON::kRemove, xList, nullptr);
+								break;
+							}
+						}
+					}
+				}
+			}
+
+			return EventResult::kContinue;
+		}
+
+		~BreakEventManager() = default;
+
+		BreakEventManager& operator=(const BreakEventManager&) = delete;
+		BreakEventManager& operator=(BreakEventManager&&) = delete;
+	};
+
+	void Register()
+	{
+		BreakEventManager::Register();
+		logger::info("Registered all event handlers"sv);
+	}
+}
+
 namespace keywordUtil
 {
 	std::mutex keyword_cache_lock;
@@ -254,7 +340,7 @@ namespace OutfitNS
 		ActorEquipManager* equip_manager = ActorEquipManager::GetSingleton();
 
 		if (unequip)
-			run_scripts(actor, {"unequipall"});
+			run_scripts(actor, { "unequipall" });
 
 		std::vector<TESForm*> to_equip;
 		to_equip.reserve(outfit.articles.size());

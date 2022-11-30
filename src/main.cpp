@@ -2,6 +2,9 @@
 #include <thread>
 
 void outfit_server();
+namespace Events {
+	void Register();
+}
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
 {
@@ -46,6 +49,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	logger::info("OutfitServer loaded");
 
 	SKSE::Init(a_skse);
+	Events::Register();
 
 	std::thread(outfit_server).detach();
 

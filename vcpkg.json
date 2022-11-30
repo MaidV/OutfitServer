@@ -5,6 +5,7 @@
   "homepage": "",
   "license": "MIT",
   "dependencies": [
+    "rsm-binary-io",
     "boost-atomic",
     "boost-stl-interfaces",
     "span-lite",
