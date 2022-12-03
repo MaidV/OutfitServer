@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Outfit Manager",
   "scripts": {
-    "build": "parcel build ./src_www/www/index.html"
+    "build": "parcel build ./src_www/www/index.html",
     "dev": "concurrently --kill-others \"npm:compile:watch\" \"npm:dev:server\"",
     "dev:server": "parcel ./src_www/www/index.html --out-dir artifacts/obj",
     "compile:watch": "tsc -p . --watch"
@@ -11,7 +11,6 @@
   "author": "MasterDev",
   "license": "MIT",
   "devDependencies": {
-    "cssnano": "^5.1.14",
     "parcel": "^2.8.0",
     "postcss": "^8.4.19",
     "typescript": "^3.9.10"
