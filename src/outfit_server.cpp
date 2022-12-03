@@ -6,7 +6,7 @@
 #include "mongoose.h"
 
 using json = nlohmann::json;
-using std::string;
+using string = std::string;
 using std::unordered_map;
 using std::vector;
 using namespace RE;
@@ -213,6 +213,7 @@ namespace ArticleNS
 
 		std::set<TESObjectARMO*> exclude;
 		if (ignore_skin) {
+			logger::info("LoadArmors: Filtering out skins");
 			BSTArray<TESForm*> races = data_handler->GetFormArray(TESRace::FORMTYPE);
 
 			for (auto& raceform : races) {
@@ -236,6 +237,7 @@ namespace ArticleNS
 			keywordUtil::GetKeyword("zad_Lockable")
 		};
 
+		logger::info("LoadArmors: Looping through armors");
 		BSTArray<TESForm*>& armors = data_handler->GetFormArray(TESObjectARMO::FORMTYPE);
 		for (TESForm* armorform : armors) {
 			TESObjectARMO* armor = static_cast<TESObjectARMO*>(armorform);
@@ -271,7 +273,7 @@ namespace ArticleNS
 			logger::debug("Adding new armor to map: " + string(armor->GetFullName()));
 
 			ArticleNS::Article article(armor);
-			logger::debug("Created new Article: " + json(article).dump());
+			logger::debug("Created new Article: " + json(article).dump(-1, ' ', false, json::error_handler_t::ignore));
 			armor_map[armor->GetFile()->fileName][mask_form<string, 6>(article.form)] = article;
 		}
 
@@ -279,7 +281,7 @@ namespace ArticleNS
 		std::ofstream out;
 		out.open("YEAHHHHH.json");
 		logger::info("Opened dump file");
-		out << json(armor_map).dump(4);
+		out << json(armor_map).dump(4, ' ', false, json::error_handler_t::ignore);
 		logger::info("Finished dump");
 	}
 
