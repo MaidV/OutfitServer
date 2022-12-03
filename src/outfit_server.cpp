@@ -397,7 +397,7 @@ static void cb(struct mg_connection* c, int ev, void* ev_data, void*)
 			mg_http_reply(c,
 				200,
 				"Content-Type: application/json; charset=utf-8\r\nAccess-Control-Allow-Origin: *\r\n",
-				json(armors).dump().c_str());
+				json(armors).dump(4, ' ', false, json::error_handler_t::ignore).c_str());
 
 			return;
 		} else if (mg_vcmp(&hm->uri, "/TryOutfit") == 0) {

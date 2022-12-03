@@ -2,8 +2,8 @@
   "name": "outfit-manager",
   "version": "0.0.1",
   "description": "Outfit Manager",
-  "main": "dist/js/bundle.js",
   "scripts": {
+    "build": "parcel build ./src_www/www/index.html"
     "dev": "concurrently --kill-others \"npm:compile:watch\" \"npm:dev:server\"",
     "dev:server": "parcel ./src_www/www/index.html --out-dir artifacts/obj",
     "compile:watch": "tsc -p . --watch"
@@ -11,9 +11,16 @@
   "author": "MasterDev",
   "license": "MIT",
   "devDependencies": {
-    "typescript": "^3.9.7"
+    "cssnano": "^5.1.14",
+    "parcel": "^2.8.0",
+    "postcss": "^8.4.19",
+    "typescript": "^3.9.10"
   },
   "browserslist": [
     "since 2020-01"
-  ]
+  ],
+  "dependencies": {
+    "@swc/helpers": "^0.4.14",
+    "npm": "^9.1.3"
+  }
 }
