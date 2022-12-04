@@ -187,9 +187,9 @@ namespace ArticleNS
 	void to_json(json& j, const Article& a);
 
 	typedef unordered_map<string, unordered_map<string, ArticleNS::Article>> armor_record_t;
-	typedef unordered_map<string, unordered_map<string, OutfitNS::Outfit>> armor_morph_t;
+	typedef unordered_map<string, unordered_map<string, OutfitNS::Outfit>> transform_t;
 	armor_record_t armor_map;
-	armor_morph_t armor_morph_map;
+	transform_t transform_map;
 
 	void LoadArmors()
 	{
@@ -279,28 +279,28 @@ namespace ArticleNS
 		logger::info("Finished dump");
 	}
 
-	void LoadMorphs()
+	void LoadTransforms()
 	{
-		if (!armor_morph_map.empty())
+		if (!transform_map.empty())
 			return;
 
-		armor_morph_map["Dawnguard.esm"]["0023E9"] = OutfitNS::Outfit{
+		transform_map["Dawnguard.esm"]["0023E9"] = OutfitNS::Outfit{
 			"Outfit 0", {
 							armor_map["Dawnguard.esm"]["0071E1"],
 						}
 		};
 	};
 
-	void MorphArmor(Actor* actor, TESObjectARMO* armor)
+	void TransformArmor(Actor* actor, TESObjectARMO* armor)
 	{
 		LoadArmors();
-		LoadMorphs();
+		LoadTransforms();
 
 		string file = armor->GetFile()->fileName;
 		string form = mask_form<string, 6>(armor);
 
-		if (!armor_morph_map.count(file) || !armor_morph_map[file].count(form)) {
-			spdlog::warn("(" + file + ", " + form + ") not in morph map");
+		if (!transform_map.count(file) || !transform_map[file].count(form)) {
+			spdlog::warn("(" + file + ", " + form + ") not in Transform map");
 			return;
 		}
 		spdlog::warn("(" + file + ", " + form + ") FOUND OMG");
