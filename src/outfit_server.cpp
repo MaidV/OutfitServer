@@ -2,6 +2,7 @@
 #include <unordered_map>
 
 #include "json.hpp"
+#include "outfit_server.h"
 
 #include "mongoose.h"
 
@@ -13,8 +14,7 @@ using namespace RE;
 
 namespace Events
 {
-	class BreakEventManager : public RE::BSTEventSink<TESHitEvent>,
-	BSTEventSink<TESEquipEvent>
+	class BreakEventManager : public RE::BSTEventSink<TESHitEvent>, BSTEventSink<TESEquipEvent>
 	{
 	public:
 		[[nodiscard]] static BreakEventManager* GetSingleton()
@@ -45,7 +45,8 @@ namespace Events
 			return EventResult::kContinue;
 		}
 
-		EventResult ProcessEvent(const TESEquipEvent* a_event, BSTEventSource<TESEquipEvent>*) override {
+		EventResult ProcessEvent(const TESEquipEvent* a_event, BSTEventSource<TESEquipEvent>*) override
+		{
 			if (a_event && a_event->equipped && a_event->actor) {
 				return Evaluate(a_event->actor);
 			}
@@ -67,13 +68,13 @@ namespace Events
 			for (const auto& [item, invData] : inv) {
 				const auto& [count, entry] = invData;
 				if (count > 0 && entry->IsWorn()) {
-					for (const auto &xList : *entry->extraLists) {
+					for (const auto& xList : *entry->extraLists) {
 						if (xList) {
 							auto xHealth = xList->GetByType<ExtraHealth>();
 							if (xHealth && xHealth->health <= 0.1f) {
 								logger::info("Removing item {}"sv, item->GetName());
 								ActorEquipManager::GetSingleton()->UnequipObject(target->As<Actor>(), item, xList);
-								//target->RemoveItem(item, 1, ITEM_REMOVE_REASON::kRemove, xList, nullptr);
+								target->RemoveItem(item, 1, ITEM_REMOVE_REASON::kRemove, xList, nullptr);
 								break;
 							}
 						}
@@ -174,28 +175,21 @@ T mask_form(TESForm* form)
 
 namespace ArticleNS
 {
-	struct Article
-	{
-		string name;
-		string editorID;
-		int32_t formID;
-		uint32_t slots;
-		TESObjectARMO* form;
+	Article::Article(TESObjectARMO* armor) :
+		name(armor->GetFullName()),
+		editorID(armor->GetFormEditorID()),
+		formID(mask_form<int32_t, 6>(armor)),
+		slots(static_cast<int32_t>(armor->GetSlotMask())),
+		form(armor){};
 
-		Article(){};
 
-		Article(TESObjectARMO* armor) :
-			name(armor->GetFullName()),
-			editorID(armor->GetFormEditorID()),
-			formID(mask_form<int32_t, 6>(armor)),
-			slots(static_cast<int32_t>(armor->GetSlotMask())),
-			form(armor){};
-	};
 	void from_json(const json& j, Article& a);
 	void to_json(json& j, const Article& a);
 
 	typedef unordered_map<string, unordered_map<string, ArticleNS::Article>> armor_record_t;
+	typedef unordered_map<string, unordered_map<string, OutfitNS::Outfit>> armor_morph_t;
 	armor_record_t armor_map;
+	armor_morph_t armor_morph_map;
 
 	void LoadArmors()
 	{
@@ -285,6 +279,56 @@ namespace ArticleNS
 		logger::info("Finished dump");
 	}
 
+	void LoadMorphs()
+	{
+		if (!armor_morph_map.empty())
+			return;
+
+		armor_morph_map["Dawnguard.esm"]["0023E9"] = OutfitNS::Outfit{
+			"Outfit 0", {
+							armor_map["Dawnguard.esm"]["0071E1"],
+						}
+		};
+	};
+
+	void MorphArmor(Actor* actor, TESObjectARMO* armor)
+	{
+		LoadArmors();
+		LoadMorphs();
+
+		string file = armor->GetFile()->fileName;
+		string form = mask_form<string, 6>(armor);
+
+		if (!armor_morph_map.count(file) || !armor_morph_map[file].count(form)) {
+			spdlog::warn("(" + file + ", " + form + ") not in morph map");
+			return;
+		}
+		spdlog::warn("(" + file + ", " + form + ") FOUND OMG");
+
+		auto target = actor->AsReference();
+		const auto inv = target->GetInventory([](TESBoundObject& a_object) {
+			return a_object.IsArmor();
+		});
+
+		for (const auto& [item, invData] : inv) {
+			const auto& [count, entry] = invData;
+			bool done = false;
+			if (count > 0 && entry->IsWorn() && (entry->object == armor)) {
+				for (const auto& xList : *entry->extraLists) {
+					if (!xList)
+						continue;
+					logger::info("Removing item {}"sv, item->GetName());
+					ActorEquipManager::GetSingleton()->UnequipObject(target->As<Actor>(), item, xList);
+					target->RemoveItem(item, 1, ITEM_REMOVE_REASON::kRemove, xList, nullptr);
+					done = true;
+					break;
+				}
+			}
+			if (done)
+				break;
+		}
+	}
+
 	armor_record_t& GetLoadedArmors()
 	{
 		return ArticleNS::armor_map;
@@ -327,11 +371,6 @@ namespace ArticleNS
 
 namespace OutfitNS
 {
-	struct Outfit
-	{
-		string name;
-		std::vector<ArticleNS::Article> articles;
-	};
 	std::unordered_map<string, Outfit> outfit_map;
 
 	void from_json(const json& j, Outfit& o);
@@ -419,7 +458,7 @@ static void cb(struct mg_connection* c, int ev, void* ev_data, void*)
 	}
 }
 
-void outfit_server(const int &port, const bool &local_only)
+void outfit_server(const int& port, const bool& local_only)
 {
 	struct mg_mgr mgr;
 	mg_mgr_init(&mgr);
