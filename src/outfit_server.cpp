@@ -381,12 +381,9 @@ namespace OutfitNS
 	}
 }
 
-
-static const char* s_web_root_dir = "data/outfitmanager";
-static const char* s_listening_address = "http://localhost:8000";
-
 static void cb(struct mg_connection* c, int ev, void* ev_data, void*)
 {
+	const char* s_web_root_dir = "data/outfitmanager";
 	if (ev == MG_EV_HTTP_MSG) {
 		struct mg_http_message* hm = static_cast<mg_http_message*>(ev_data);
 		ArticleNS::LoadArmors();
@@ -397,7 +394,7 @@ static void cb(struct mg_connection* c, int ev, void* ev_data, void*)
 			mg_http_reply(c,
 				200,
 				"Content-Type: application/json; charset=utf-8\r\nAccess-Control-Allow-Origin: *\r\n",
-				json(armors).dump(4, ' ', false, json::error_handler_t::ignore).c_str());
+				json(armors).dump(-1, ' ', false, json::error_handler_t::ignore).c_str());
 
 			return;
 		} else if (mg_vcmp(&hm->uri, "/TryOutfit") == 0) {
@@ -422,11 +419,12 @@ static void cb(struct mg_connection* c, int ev, void* ev_data, void*)
 	}
 }
 
-void outfit_server()
+void outfit_server(const int &port, const bool &local_only)
 {
 	struct mg_mgr mgr;
 	mg_mgr_init(&mgr);
-	mg_http_listen(&mgr, s_listening_address, cb, &mgr);
+	std::string listening_address = (local_only ? "http://localhost:" : "http://0.0.0.0:") + std::to_string(port);
+	mg_http_listen(&mgr, listening_address.c_str(), cb, &mgr);
 	while (true)
 		mg_mgr_poll(&mgr, 1000);
 	mg_mgr_free(&mgr);
