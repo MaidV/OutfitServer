@@ -148,7 +148,7 @@ void run_scripts(Actor* actor, vector<string> commands)
 		return;
 	for (auto& command : commands) {
 		script->SetCommand(command);
-		logger::info(script->GetCommand());
+		logger::info("{}"sv, script->GetCommand());
 		script->CompileAndRun(actor);
 	}
 	delete script;
@@ -235,7 +235,7 @@ namespace ArticleNS
 		BSTArray<TESForm*>& armors = data_handler->GetFormArray(TESObjectARMO::FORMTYPE);
 		for (TESForm* armorform : armors) {
 			TESObjectARMO* armor = static_cast<TESObjectARMO*>(armorform);
-			logger::debug("Checking armor " + string(armor->GetFullName()));
+			logger::debug("Checking armor {}"sv, + armor->GetFullName());
 			if (ignore_skin && exclude.contains(armor)) {
 				logger::debug("Excluding armor due to skin");
 				continue;
@@ -264,10 +264,10 @@ namespace ArticleNS
 				logger::debug("Excluding armor due to not having a name");
 				continue;
 			}
-			logger::debug("Adding new armor to map: " + string(armor->GetFullName()));
+			logger::debug("Adding new armor to map: {}"sv, armor->GetFullName());
 
 			ArticleNS::Article article(armor);
-			logger::debug("Created new Article: " + json(article).dump(-1, ' ', false, json::error_handler_t::ignore));
+			logger::debug("Created new Article: {}"sv, json(article).dump(-1, ' ', false, json::error_handler_t::ignore));
 			armor_map[armor->GetFile()->fileName][mask_form<string, 6>(article.form)] = article;
 		}
 
@@ -349,7 +349,7 @@ namespace ArticleNS
 	{
 		string mod = j.at("mod");
 		string formID = j.at("formID");
-		logger::info("Article: " + mod + " " + formID);
+		logger::info("Article: {} {}"sv, mod, formID);
 		a = Article(armor_map[mod][formID]);
 	}
 
@@ -445,7 +445,7 @@ static void cb(struct mg_connection* c, int ev, void* ev_data, void*)
 			for (int i = 0; i < len; ++i)
 				outfit_str[i] = data[i];
 			outfit_str[len] = '\0';
-			logger::info(outfit_str.c_str());
+			logger::info("{}"sv, outfit_str.c_str());
 
 			OutfitNS::TryOutfit(PlayerCharacter::GetSingleton(), outfit_str.c_str());
 
