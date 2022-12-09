@@ -12,6 +12,13 @@ using std::unordered_map;
 using std::vector;
 using namespace RE;
 
+std::pair<string, string> split_string(const string &str) {
+	auto index = str.find("|");
+	string mod = str.substr(0, index);
+	string id = str.substr(index, str.length() - index);
+	return std::make_pair(mod, id);
+};
+
 namespace Events
 {
 	class BreakEventManager : public RE::BSTEventSink<TESHitEvent>, BSTEventSink<TESEquipEvent>
@@ -187,9 +194,7 @@ namespace ArticleNS
 	void to_json(json& j, const Article& a);
 
 	typedef unordered_map<string, unordered_map<string, ArticleNS::Article>> armor_record_t;
-	typedef unordered_map<string, unordered_map<string, OutfitNS::Outfit>> transform_t;
 	armor_record_t armor_map;
-	transform_t transform_map;
 
 	void LoadArmors()
 	{
@@ -273,60 +278,10 @@ namespace ArticleNS
 
 		logger::info("Loaded all armors into Armor Map");
 		std::ofstream out;
-		out.open("YEAHHHHH.json");
+		out.open("data/skse/plugins/transform armor/AllArmors_dump.json");
 		logger::info("Opened dump file");
 		out << json(armor_map).dump(4, ' ', false, json::error_handler_t::ignore);
 		logger::info("Finished dump");
-	}
-
-	void LoadTransforms()
-	{
-		if (!transform_map.empty())
-			return;
-
-		transform_map["Dawnguard.esm"]["0023E9"] = OutfitNS::Outfit{
-			"Outfit 0", {
-							armor_map["Dawnguard.esm"]["0071E1"],
-						}
-		};
-	};
-
-	void TransformArmor(Actor* actor, TESObjectARMO* armor)
-	{
-		LoadArmors();
-		LoadTransforms();
-
-		string file = armor->GetFile()->fileName;
-		string form = mask_form<string, 6>(armor);
-
-		if (!transform_map.count(file) || !transform_map[file].count(form)) {
-			spdlog::warn("(" + file + ", " + form + ") not in Transform map");
-			return;
-		}
-		spdlog::warn("(" + file + ", " + form + ") FOUND OMG");
-
-		auto target = actor->AsReference();
-		const auto inv = target->GetInventory([](TESBoundObject& a_object) {
-			return a_object.IsArmor();
-		});
-
-		for (const auto& [item, invData] : inv) {
-			const auto& [count, entry] = invData;
-			bool done = false;
-			if (count > 0 && entry->IsWorn() && (entry->object == armor)) {
-				for (const auto& xList : *entry->extraLists) {
-					if (!xList)
-						continue;
-					logger::info("Removing item {}"sv, item->GetName());
-					ActorEquipManager::GetSingleton()->UnequipObject(target->As<Actor>(), item, xList);
-					target->RemoveItem(item, 1, ITEM_REMOVE_REASON::kRemove, xList, nullptr);
-					done = true;
-					break;
-				}
-			}
-			if (done)
-				break;
-		}
 	}
 
 	armor_record_t& GetLoadedArmors()
@@ -369,6 +324,94 @@ namespace ArticleNS
 	}
 }
 
+namespace TransformNS
+{
+	typedef unordered_map<int32_t, vector<ArticleNS::Article>> transform_target_t;
+	unordered_map<string, transform_target_t> transform_map;
+
+	void from_json(const json& j, transform_target_t& a);
+	void to_json(json& j, const transform_target_t& a);
+
+	void LoadTransforms()
+	{
+		if (!transform_map.empty())
+			return;
+
+		std::ifstream ifs("data/skse/plugins/transform armor/transforms.json");
+		transform_map = json::parse(ifs).get<decltype(transform_map)>();
+	};
+
+	void TransformArmor(Actor* actor, TESObjectARMO* armor)
+	{
+		LoadTransforms();
+
+		string file = armor->GetFile()->fileName;
+		string form = mask_form<string, 6>(armor);
+		string key = file + "|" + form;
+
+		if (!transform_map.count(key)) {
+			spdlog::warn("(" + file + ", " + form + ") not in Transform map");
+			return;
+		}
+		spdlog::info("(" + file + ", " + form + ") FOUND OMG");
+
+		auto target = actor->AsReference();
+		const auto inv = target->GetInventory([](TESBoundObject& a_object) {
+			return a_object.IsArmor();
+		});
+
+		for (const auto& [item, invData] : inv) {
+			const auto& [count, entry] = invData;
+			bool done = false;
+			if (count > 0 && entry->IsWorn() && (entry->object == armor)) {
+				for (const auto& xList : *entry->extraLists) {
+					if (!xList)
+						continue;
+					logger::info("Removing item {}"sv, item->GetName());
+					ActorEquipManager::GetSingleton()->UnequipObject(target->As<Actor>(), item, xList);
+					target->RemoveItem(item, 1, ITEM_REMOVE_REASON::kRemove, xList, nullptr);
+					done = true;
+					break;
+				}
+			}
+			if (done)
+				break;
+		}
+
+		vector<ArticleNS::Article> to_equip;
+		OutfitNS::Outfit outfit;
+		outfit.name = key;
+		for (const auto&[_, articles] : transform_map.at(key)) {
+			if (articles.empty())
+				continue;
+
+			outfit.articles.push_back(articles[rand() % articles.size()]);
+		}
+
+		OutfitNS::TryOutfit(actor, outfit, false);
+	}
+
+	void from_json(const json& j, transform_target_t& a)
+	{
+		const auto &armor_map = ArticleNS::GetLoadedArmors();
+		unordered_map<string, vector<string>> targets_raw = j;
+		for (const auto&[slot, val] : targets_raw) {
+			int32_t i_slot = atoi(slot.c_str());
+			a[i_slot] = {};
+
+			for (const auto&formpair : val) {
+				auto [mod, formID] = split_string(formpair);
+				a[i_slot].push_back(armor_map.at(mod).at(formID));
+			}
+		}
+	}
+
+	void to_json(json& j, const transform_target_t& a)
+	{
+		j = json{};
+	}	
+}
+
 namespace OutfitNS
 {
 	std::unordered_map<string, Outfit> outfit_map;
@@ -376,7 +419,7 @@ namespace OutfitNS
 	void from_json(const json& j, Outfit& o);
 	void to_json(json& j, const Outfit& o);
 
-	void TryOutfit(Actor* actor, OutfitNS::Outfit& outfit, bool unequip = true)
+	void TryOutfit(Actor* actor, const OutfitNS::Outfit& outfit, bool unequip)
 	{
 		ActorEquipManager* equip_manager = ActorEquipManager::GetSingleton();
 
@@ -385,7 +428,7 @@ namespace OutfitNS
 
 		std::vector<TESForm*> to_equip;
 		to_equip.reserve(outfit.articles.size());
-		for (ArticleNS::Article& article : outfit.articles) {
+		for (const ArticleNS::Article& article : outfit.articles) {
 			to_equip.push_back(article.form);
 		}
 		ArticleNS::AddItem(actor, to_equip, 1);

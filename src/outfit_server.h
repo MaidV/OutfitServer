@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 
+void outfit_server(const int &port, const bool &local_only);
+
 namespace ArticleNS
 {
 	struct Article
@@ -15,10 +17,12 @@ namespace ArticleNS
 
 		Article(){};
         Article(RE::TESObjectARMO* armor);
-	};
-}
 
-void outfit_server(const int &port, const bool &local_only);
+	};
+
+	void LoadArmors();
+	void LoadTransforms();
+}
 
 namespace OutfitNS
 {
@@ -27,5 +31,7 @@ namespace OutfitNS
 		std::string name;
 		std::vector<ArticleNS::Article> articles;
 	};
+
+	void TryOutfit(RE::Actor* actor, const Outfit& outfit, bool unequip = true);
 }
 

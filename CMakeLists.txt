@@ -146,7 +146,7 @@ add_library(${PROJECT_NAME} SHARED
 
 target_compile_features(${PROJECT_NAME}
 	PUBLIC
-		cxx_std_17
+		cxx_std_20
 )
 
 target_compile_options(${PROJECT_NAME}
