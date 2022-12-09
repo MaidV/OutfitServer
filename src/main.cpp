@@ -53,7 +53,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	logger::info("OutfitServer v0.0.1");
 
 	SKSE::Init(a_skse);
-	Events::Register();
+	// Events::Register();
 
 	char buff[100];
 	GetPrivateProfileString("General", "bEnable", "1", buff, 100, "OutfitServer.ini");

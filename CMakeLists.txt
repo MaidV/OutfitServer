@@ -124,7 +124,9 @@ set(headers
 set(sources
 	src/main.cpp
 	src/mongoose.cpp
+	src/outfit.cpp
 	src/outfit_server.cpp
+	src/utils.cpp
 )
 set_source_files_properties(src/mongoose.cpp PROPERTIES COMPILE_FLAGS "/wd4996 /wd4244 /wd4267 /wd4312")
 
