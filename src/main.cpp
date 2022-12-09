@@ -1,4 +1,5 @@
 ﻿#include "outfit_server.h"
+#include "outfit.hpp"
 #include <thread>
 
 #include <Windows.h>
@@ -32,6 +33,10 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
 
 	return v;
 }();
+
+static inline void TransformArmor(RE::StaticFunctionTag*, RE::Actor *actor, RE::TESForm* armor) {
+	TransformNS::TransformArmor(actor, static_cast<RE::TESObjectARMO*>(armor));
+}
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
@@ -70,6 +75,17 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 	if (bEnabled)
 		std::thread(outfit_server, iPort, bLocalOnly).detach();
+
+	auto RegisterPapyrusFuncs = [](RE::BSScript::IVirtualMachine* a_vm) -> bool {
+		a_vm->RegisterFunction("TransformArmor", "OutfitServer", TransformArmor);
+		return true;
+	};
+
+	auto papyrus = SKSE::GetPapyrusInterface();
+	if (!papyrus->Register(RegisterPapyrusFuncs)) {
+		logger::critical("Failed to register papyrus callback"sv);
+		return false;
+	}
 
 	return true;
 }

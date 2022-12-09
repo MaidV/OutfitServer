@@ -38,3 +38,8 @@ namespace OutfitNS
 	void TryOutfit(RE::Actor* actor, const char* outfit_str, bool unequip = true);
 	void TryOutfit(RE::Actor* actor, const Outfit& outfit, bool unequip = true);
 }
+
+namespace TransformNS
+{
+	void TransformArmor(RE::Actor* actor, RE::TESObjectARMO* armor);
+}

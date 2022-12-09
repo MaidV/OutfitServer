@@ -66,6 +66,6 @@ std::pair<string, string> split_string(const string& str)
 {
 	auto index = str.find("|");
 	string mod = str.substr(0, index);
-	string id = str.substr(index, str.length() - index);
+	string id = str.substr(index + 1, str.length() - index - 1);
 	return std::make_pair(mod, id);
 };

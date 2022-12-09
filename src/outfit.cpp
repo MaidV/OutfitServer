@@ -165,13 +165,23 @@ namespace TransformNS
 	{
 		if (!transform_map.empty())
 			return;
-
+		spdlog::info("[OS] Attempting to load transforms...");
 		std::ifstream ifs("data/skse/plugins/transform armor/transforms.json");
-		transform_map = json::parse(ifs).get<decltype(transform_map)>();
+		spdlog::info("[OS] Opened IFS");
+		auto parsed = json::parse(ifs);
+		spdlog::info("[OS] Parsed transforms");
+		for (json::iterator source = parsed.begin(); source != parsed.end(); ++source) {
+			spdlog::info("[OS]: {}", source.key());
+			transform_target_t tmp;
+			from_json(source.value(), tmp);
+			transform_map[source.key()] = tmp;
+		}
+		spdlog::info("[OS] Loaded transforms");
 	};
 
 	void TransformArmor(Actor* actor, TESObjectARMO* armor)
 	{
+		ArticleNS::LoadArmors();
 		LoadTransforms();
 
 		string file = armor->GetFile()->fileName;
@@ -223,16 +233,28 @@ namespace TransformNS
 	void from_json(const json& j, transform_target_t& a)
 	{
 		const auto& armor_map = ArticleNS::GetLoadedArmors();
-		unordered_map<string, vector<string>> targets_raw = j;
-		for (const auto& [slot, val] : targets_raw) {
+		spdlog::info("transform from json...");
+		for (json::const_iterator it = j.cbegin(); it != j.cend(); ++it) {
+			int32_t i_slot = atoi(it.key().c_str());
+			a[i_slot] = {};
+
+			vector<string> tmp = it.value().get<vector<string>>();
+			for (auto formpair : tmp) {
+				auto [mod, formID] = split_string(formpair);
+				spdlog::info("[OS] {} {}"sv, mod, formID);
+				a[i_slot].push_back(armor_map.at(mod).at(formID));
+			}
+		}
+		/* for (const auto& [slot, val] : targets_raw) {
 			int32_t i_slot = atoi(slot.c_str());
 			a[i_slot] = {};
 
 			for (const auto& formpair : val) {
 				auto [mod, formID] = split_string(formpair);
+                spdlog::info("[OS] {} {}"sv, mod, formID);
 				a[i_slot].push_back(armor_map.at(mod).at(formID));
 			}
-		}
+		} */
 	}
 }
 
