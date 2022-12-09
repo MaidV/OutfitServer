@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.15)
 set(CMAKE_CXX_FLAGS_RELEASE "/MT")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "")
 set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
@@ -86,12 +86,13 @@ if (MSVC)
 		/external:anglebrackets
 		/external:W0
 		
-		/W4	# Warning level (all warnings)
+		#/W3	# Warning level (all warnings)
 		#/WX	# Warning level (warnings are errors)
 		
 		"$<$<CONFIG:Debug>:${COMPILE_OPTIONS_DEBUG}>"
 		"$<$<CONFIG:Release>:${COMPILE_OPTIONS_RELEASE}>"
 	)
+	string(REGEX REPLACE "/W3" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 	set(LINK_OPTIONS_DEBUG
 		/INCREMENTAL	# Link Incrementally

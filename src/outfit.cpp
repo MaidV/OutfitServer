@@ -234,8 +234,6 @@ namespace TransformNS
 			}
 		}
 	}
-
-	void to_json(json& j, const transform_target_t& a) {}
 }
 
 namespace OutfitNS
