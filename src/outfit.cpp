@@ -1,6 +1,7 @@
+#include <filesystem>
 #include <string>
 #include <unordered_map>
-#include <filesystem>
+
 
 #include "json.hpp"
 #include "outfit.hpp"
@@ -69,7 +70,7 @@ namespace ArticleNS
 		BSTArray<TESForm*>& armors = data_handler->GetFormArray(TESObjectARMO::FORMTYPE);
 		for (TESForm* armorform : armors) {
 			TESObjectARMO* armor = static_cast<TESObjectARMO*>(armorform);
-			logger::debug("Checking armor {}"sv, +armor->GetFullName());
+			logger::debug("Checking armor {}", armor->GetFullName());
 			if (ignore_skin && exclude.contains(armor)) {
 				logger::debug("Excluding armor due to skin");
 				continue;
@@ -98,10 +99,10 @@ namespace ArticleNS
 				logger::debug("Excluding armor due to not having a name");
 				continue;
 			}
-			logger::debug("Adding new armor to map: {}"sv, armor->GetFullName());
+			logger::debug("Adding new armor to map: {}", armor->GetFullName());
 
 			ArticleNS::Article article(armor);
-			logger::debug("Created new Article: {}"sv, json(article).dump(-1, ' ', false, json::error_handler_t::ignore));
+			logger::debug("Created new Article: {}", json(article).dump(-1, ' ', false, json::error_handler_t::ignore));
 			armor_map[armor->GetFile()->fileName][mask_form<string, 6>(article.form)] = article;
 		}
 
@@ -133,7 +134,7 @@ namespace ArticleNS
 	{
 		string mod = j.at("mod");
 		string formID = j.at("formID");
-		logger::info("Article: {} {}"sv, mod, formID);
+		logger::info("Article: {} {}", mod, formID);
 		a = Article(armor_map[mod][formID]);
 	}
 
@@ -165,9 +166,9 @@ namespace TransformNS
 	{
 		if (!transform_map.empty())
 			return;
-		
+
 		const string basepath = "data/skse/plugins/transform armor";
-    	for (const auto & entry : std::filesystem::directory_iterator(basepath)) {
+		for (const auto& entry : std::filesystem::directory_iterator(basepath)) {
 			const auto filename = entry.path().string();
 			if (!filename.ends_with(".json"))
 				continue;
@@ -178,9 +179,19 @@ namespace TransformNS
 				for (json::iterator source = parsed.begin(); source != parsed.end(); ++source) {
 					transform_target_t tmp;
 					from_json(source.value(), tmp);
-					transform_map[source.key()] = tmp;
+					if (transform_map.count(source.key())) {
+						for (auto& [slot, list] : transform_map[source.key()]) {
+							if (!tmp.contains(slot))
+								tmp[slot] = list;
+							else {
+								for (auto& article : tmp[slot])
+									list.push_back(article);
+							}
+						}
+					} else
+						transform_map[source.key()] = tmp;
 				}
-			} catch(...) {
+			} catch (...) {
 				spdlog::warn("Unable to parse " + filename);
 			}
 		}
@@ -213,7 +224,7 @@ namespace TransformNS
 				for (const auto& xList : *entry->extraLists) {
 					if (!xList)
 						continue;
-					logger::info("Removing item {}"sv, item->GetName());
+					logger::info("Removing item {}", item->GetName());
 					ActorEquipManager::GetSingleton()->UnequipObject(target->As<Actor>(), item, xList);
 					target->RemoveItem(item, 1, ITEM_REMOVE_REASON::kRemove, xList, nullptr);
 					done = true;
@@ -247,7 +258,8 @@ namespace TransformNS
 			vector<string> tmp = it.value().get<vector<string>>();
 			for (auto formpair : tmp) {
 				auto [mod, formID] = split_string(formpair);
-				a[i_slot].push_back(armor_map.at(mod).at(formID));
+				if (armor_map.count(mod) && armor_map.at(mod).count(formID))
+					a[i_slot].push_back(armor_map.at(mod).at(formID));
 			}
 		}
 	}
