@@ -1,5 +1,5 @@
-﻿#include "outfit_server.h"
-#include "outfit.hpp"
+﻿#include "outfit.hpp"
+#include "outfit_server.h"
 #include <thread>
 
 #include <Windows.h>
@@ -34,7 +34,8 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
 	return v;
 }();
 
-static inline void TransformArmor(RE::StaticFunctionTag*, RE::Actor *actor, RE::TESForm* armor) {
+static inline void TransformArmor(RE::StaticFunctionTag*, RE::Actor* actor, RE::TESForm* armor)
+{
 	TransformNS::TransformArmor(actor, static_cast<RE::TESObjectARMO*>(armor));
 }
 
@@ -53,7 +54,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	log->flush_on(spdlog::level::info);
 
 	spdlog::set_default_logger(std::move(log));
-	spdlog::set_pattern("%g(%#): [%^%l%$] %v"s);
+	spdlog::set_pattern("[%^%l%$] %v"s);
 
 	logger::info("OutfitServer v0.0.1");
 
