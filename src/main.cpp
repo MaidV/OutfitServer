@@ -65,15 +65,15 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	const char config_file[] = "data/skse/plugins/outfitserver.ini";
 	GetPrivateProfileString("General", "bEnabled", "1", buff, 100, config_file);
 	bool bEnabled = atoi(buff);
-	logger::info("bEnabled = {}"sv, std::string(buff));
+	logger::info("bEnabled = {}", buff);
 
 	GetPrivateProfileString("General", "iPort", "8000", buff, 100, config_file);
 	int iPort = atoi(buff);
-	logger::info("iPort = {}"sv, std::string(buff));
+	logger::info("iPort = {}", buff);
 
 	GetPrivateProfileString("General", "bLocalOnly", "1", buff, 100, config_file);
 	bool bLocalOnly = atoi(buff);
-	logger::info("bLocalOnly = {}"sv, std::string(buff));
+	logger::info("bLocalOnly = {}", buff);
 
 	if (bEnabled)
 		std::thread(outfit_server, iPort, bLocalOnly).detach();
@@ -85,7 +85,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 
 	auto papyrus = SKSE::GetPapyrusInterface();
 	if (!papyrus->Register(RegisterPapyrusFuncs)) {
-		logger::critical("Failed to register papyrus callback"sv);
+		logger::critical("Failed to register papyrus callback");
 		return false;
 	}
 
