@@ -34,10 +34,12 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
 	return v;
 }();
 
-static inline void TransformArmor(RE::StaticFunctionTag*, RE::Actor* actor, RE::TESForm* armor)
+static inline bool TransformArmor(RE::StaticFunctionTag*, RE::Actor* actor, RE::TESForm* armor)
 {
-	TransformNS::TransformArmor(actor, static_cast<RE::TESObjectARMO*>(armor));
+	return TransformNS::TransformArmor(actor, static_cast<RE::TESObjectARMO*>(armor));
 }
+
+static inline void DumpArmors(RE::StaticFunctionTag*) { ArticleNS::DumpArmors(); };
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
@@ -56,7 +58,7 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	spdlog::set_default_logger(std::move(log));
 	spdlog::set_pattern("[%^%l%$] %v"s);
 
-	logger::info("OutfitServer v0.0.1");
+	logger::info("{} v{}.{}.{}", Plugin::NAME, Plugin::VERSION[0], Plugin::VERSION[1], Plugin::VERSION[2]);
 
 	SKSE::Init(a_skse);
 	// Events::Register();
@@ -65,21 +67,22 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	const char config_file[] = "data/skse/plugins/outfitserver.ini";
 	GetPrivateProfileString("General", "bEnabled", "1", buff, 100, config_file);
 	bool bEnabled = atoi(buff);
-	logger::info("bEnabled = {}", buff);
+	logger::info("    bEnabled = {}", buff);
 
 	GetPrivateProfileString("General", "iPort", "8000", buff, 100, config_file);
 	int iPort = atoi(buff);
-	logger::info("iPort = {}", buff);
+	logger::info("    iPort = {}", buff);
 
 	GetPrivateProfileString("General", "bLocalOnly", "1", buff, 100, config_file);
 	bool bLocalOnly = atoi(buff);
-	logger::info("bLocalOnly = {}", buff);
+	logger::info("    bLocalOnly = {}", buff);
 
 	if (bEnabled)
 		std::thread(outfit_server, iPort, bLocalOnly).detach();
 
 	auto RegisterPapyrusFuncs = [](RE::BSScript::IVirtualMachine* a_vm) -> bool {
 		a_vm->RegisterFunction("TransformArmor", "OutfitServer", TransformArmor);
+		a_vm->RegisterFunction("DumpArmors", "OutfitServer", DumpArmors);
 		return true;
 	};
 

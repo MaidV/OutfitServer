@@ -107,11 +107,17 @@ namespace ArticleNS
 		}
 
 		logger::info("Loaded all armors into Armor Map");
-		std::ofstream out;
-		out.open("data/skse/plugins/transform armor/AllArmors_dump.json");
-		logger::info("Opened dump file");
+	}
+
+	void DumpArmors()
+	{
+		LoadArmors();
+		const std::string dump_file("OutfitServer_Armors_Dump.json");
+		std::ofstream out(dump_file);
 		out << json(armor_map).dump(4, ' ', false, json::error_handler_t::ignore);
-		logger::info("Finished dump");
+
+
+		logger::info("Dumped to: {}", (std::filesystem::current_path() / dump_file).string());
 	}
 
 	armor_record_t& GetLoadedArmors()
@@ -201,7 +207,7 @@ namespace TransformNS
 		}
 	};
 
-	void TransformArmor(Actor* actor, TESObjectARMO* armor)
+	bool TransformArmor(Actor* actor, TESObjectARMO* armor)
 	{
 		ArticleNS::LoadArmors();
 		LoadTransforms();
@@ -212,30 +218,7 @@ namespace TransformNS
 
 		if (!transform_map.count(key)) {
 			spdlog::warn("(" + file + ", " + form + ") not in Transform map");
-			return;
-		}
-
-		auto target = actor->AsReference();
-		const auto inv = target->GetInventory([](TESBoundObject& a_object) {
-			return a_object.IsArmor();
-		});
-
-		for (const auto& [item, invData] : inv) {
-			const auto& [count, entry] = invData;
-			bool done = false;
-			if (count > 0 && entry->IsWorn() && (entry->object == armor)) {
-				for (const auto& xList : *entry->extraLists) {
-					if (!xList)
-						continue;
-					logger::info("Removing item {}", item->GetName());
-					ActorEquipManager::GetSingleton()->UnequipObject(target->As<Actor>(), item, xList);
-					target->RemoveItem(item, 1, ITEM_REMOVE_REASON::kRemove, xList, nullptr);
-					done = true;
-					break;
-				}
-			}
-			if (done)
-				break;
+			return false;
 		}
 
 		vector<ArticleNS::Article> to_equip;
@@ -245,7 +228,9 @@ namespace TransformNS
 			const auto& outfits = transform_map.at(key);
 			outfit.articles = (outfits[rand() % outfits.size()]);
 			OutfitNS::TryOutfit(actor, outfit, false);
+			return true;
 		}
+		return false;
 	}
 
 	void from_json(const json& j, transform_target_t& a)

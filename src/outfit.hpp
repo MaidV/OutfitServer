@@ -25,6 +25,7 @@ namespace ArticleNS
 
 	void LoadArmors();
 	void LoadTransforms();
+	void DumpArmors();
 	armor_record_t& GetLoadedArmors();
 }
 
@@ -41,5 +42,5 @@ namespace OutfitNS
 
 namespace TransformNS
 {
-	void TransformArmor(RE::Actor* actor, RE::TESObjectARMO* armor);
+	bool TransformArmor(RE::Actor* actor, RE::TESObjectARMO* armor);
 }
