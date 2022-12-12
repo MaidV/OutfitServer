@@ -62,15 +62,16 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	// Events::Register();
 
 	char buff[100];
-	GetPrivateProfileString("General", "bEnable", "1", buff, 100, "OutfitServer.ini");
+	const char config_file[] = "data/skse/plugins/outfitserver.ini";
+	GetPrivateProfileString("General", "bEnabled", "1", buff, 100, config_file);
 	bool bEnabled = atoi(buff);
 	logger::info("bEnabled = {}"sv, std::string(buff));
 
-	GetPrivateProfileString("General", "iPort", "8000", buff, 100, "OutfitServer.ini");
+	GetPrivateProfileString("General", "iPort", "8000", buff, 100, config_file);
 	int iPort = atoi(buff);
 	logger::info("iPort = {}"sv, std::string(buff));
 
-	GetPrivateProfileString("General", "bLocalOnly", "1", buff, 100, "OutfitServer.ini");
+	GetPrivateProfileString("General", "bLocalOnly", "1", buff, 100, config_file);
 	bool bLocalOnly = atoi(buff);
 	logger::info("bLocalOnly = {}"sv, std::string(buff));
 
