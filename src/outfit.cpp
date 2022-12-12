@@ -180,22 +180,30 @@ namespace TransformNS
 					transform_target_t tmp;
 					from_json(source.value(), tmp);
 					if (transform_map.count(source.key())) {
-						for (auto& [slot, list] : transform_map[source.key()]) {
-							if (!tmp.contains(slot))
-								tmp[slot] = list;
-							else {
-								for (auto& article : tmp[slot])
-									list.push_back(article);
-							}
+						for (auto& [slot, list] : tmp) {
+							for (auto& article : transform_map[source.key()][slot])
+								list.push_back(article);
 						}
-					} else
-						transform_map[source.key()] = tmp;
+						for (auto& [slot, list] : transform_map[source.key()]) {
+							if (!tmp.count(slot))
+								tmp[slot] = list;
+						}
+					}
+					transform_map[source.key()] = tmp;
 				}
 			} catch (...) {
 				spdlog::warn("Unable to parse " + filename);
 			}
 		}
 		spdlog::info("Loaded transforms");
+
+		for (auto& [src, trgs] : transform_map) {
+			spdlog::info(src);
+			for (auto& [slot, trglist] : trgs) {
+				for (auto& el : trglist)
+					spdlog::info("{}    {}", slot, el.name);
+			}
+		}
 	};
 
 	void TransformArmor(Actor* actor, TESObjectARMO* armor)
