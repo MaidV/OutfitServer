@@ -156,7 +156,7 @@ namespace ArticleNS
 
 namespace TransformNS
 {
-	typedef unordered_map<int32_t, vector<ArticleNS::Article>> transform_target_t;
+	typedef vector<vector<ArticleNS::Article>> transform_target_t;
 	unordered_map<string, transform_target_t> transform_map;
 
 	void from_json(const json& j, transform_target_t& a);
@@ -179,16 +179,9 @@ namespace TransformNS
 				for (json::iterator source = parsed.begin(); source != parsed.end(); ++source) {
 					transform_target_t tmp;
 					from_json(source.value(), tmp);
-					if (transform_map.count(source.key())) {
-						for (auto& [slot, list] : tmp) {
-							for (auto& article : transform_map[source.key()][slot])
-								list.push_back(article);
-						}
-						for (auto& [slot, list] : transform_map[source.key()]) {
-							if (!tmp.count(slot))
-								tmp[slot] = list;
-						}
-					}
+					for (auto& outfit : transform_map[source.key()])
+						tmp.push_back(outfit);
+
 					transform_map[source.key()] = tmp;
 				}
 			} catch (...) {
@@ -199,9 +192,11 @@ namespace TransformNS
 
 		for (auto& [src, trgs] : transform_map) {
 			spdlog::info(src);
-			for (auto& [slot, trglist] : trgs) {
-				for (auto& el : trglist)
-					spdlog::info("{}    {}", slot, el.name);
+			for (auto& trglist : trgs) {
+				string outfit;
+				for (auto& trg : trglist)
+					outfit += trg.name + " ";
+				spdlog::info("    {}", outfit);
 			}
 		}
 	};
@@ -246,29 +241,26 @@ namespace TransformNS
 		vector<ArticleNS::Article> to_equip;
 		OutfitNS::Outfit outfit;
 		outfit.name = key;
-		for (const auto& [_, articles] : transform_map.at(key)) {
-			if (articles.empty())
-				continue;
-
-			outfit.articles.push_back(articles[rand() % articles.size()]);
+		if (transform_map.count(key) && transform_map.at(key).size()) {
+			const auto& outfits = transform_map.at(key);
+			outfit.articles = (outfits[rand() % outfits.size()]);
+			OutfitNS::TryOutfit(actor, outfit, false);
 		}
-
-		OutfitNS::TryOutfit(actor, outfit, false);
 	}
 
 	void from_json(const json& j, transform_target_t& a)
 	{
 		const auto& armor_map = ArticleNS::GetLoadedArmors();
 		for (json::const_iterator it = j.cbegin(); it != j.cend(); ++it) {
-			int32_t i_slot = atoi(it.key().c_str());
-			a[i_slot] = {};
-
 			vector<string> tmp = it.value().get<vector<string>>();
-			for (auto formpair : tmp) {
+			vector<ArticleNS::Article> outfit;
+
+			for (const auto& formpair : tmp) {
 				auto [mod, formID] = split_string(formpair);
 				if (armor_map.count(mod) && armor_map.at(mod).count(formID))
-					a[i_slot].push_back(armor_map.at(mod).at(formID));
+					outfit.push_back(armor_map.at(mod).at(formID));
 			}
+			a.push_back(outfit);
 		}
 	}
 }
